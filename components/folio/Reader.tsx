@@ -137,7 +137,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
       direction: number;
       progress: number;
     }>(),
-    [width, setWidth] = useState(340);
+    [bookWidth, setBookWidth] = useState(340);
   const ref = useRef<HTMLDivElement>(null),
     raf = useRef(0),
     gesture = useRef<
@@ -147,6 +147,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
           direction: number;
           progress: number;
           active: boolean;
+          width: number;
         }
       | undefined
     >(undefined),
@@ -164,17 +165,20 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
         : undefined,
     renderWide = wide || !!coverTransition,
     bookExpanded = coverTransition ? coverTransition.opening : wide,
+    pageWidth = coverTransition
+      ? bookWidth / (1 + coverTransition.openProgress)
+      : bookWidth / (renderWide ? 2 : 1),
     previousIndex = readerDestination(baseIndex, -1, folio.pages.length),
     nextIndex = readerDestination(baseIndex, 1, folio.pages.length);
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
     const observer = new ResizeObserver((entries) =>
-      setWidth(entries[0].contentRect.width / (renderWide ? 2 : 1)),
+      setBookWidth(entries[0].contentRect.width),
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [renderWide]);
+  }, []);
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
   function frame(value: typeof turn) {
     live.current = value;
@@ -230,7 +234,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
   let left = folio.pages[baseIndex],
     right = folio.pages[baseIndex + 1] || blank;
   if (coverTransition) {
-    left = coverTransition.opening ? folio.pages[1] || blank : blank;
+    left = blank;
     right = folio.pages[2] || blank;
   } else if (turn) {
     if (!wide) left = folio.pages[turn.direction > 0 ? turn.to : turn.from];
@@ -290,6 +294,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
               direction: 0,
               progress: 0,
               active: false,
+              width: pageWidth,
             };
             e.currentTarget.setPointerCapture(e.pointerId);
           }}
@@ -309,7 +314,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
             }
             const progress = Math.max(
               0,
-              Math.min(0.99, (-dx * g.direction) / (width * 0.9)),
+              Math.min(0.99, (-dx * g.direction) / (g.width * 0.9)),
             );
             g.progress = progress;
             if (live.current) frame({ ...live.current, progress });
@@ -326,8 +331,12 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
             if (live.current) animate(0);
           }}
         >
-          <div className="read-leaf">
-            <PageCanvas page={left} />
+          <div className={`read-leaf ${coverTransition ? 'cover-void' : ''}`}>
+            {coverTransition ? (
+              <div className="cover-void-surface" />
+            ) : (
+              <PageCanvas page={left} />
+            )}
             {folio.bookType === 'binder' && !renderWide && (
               <BinderHoles edge="left" />
             )}
@@ -346,10 +355,24 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
             </div>
           )}
           {folio.bookType === 'book' && renderWide && (
-            <div className="book-gutter" />
+            <div
+              className="book-gutter"
+              style={
+                coverTransition
+                  ? { opacity: coverTransition.openProgress }
+                  : undefined
+              }
+            />
           )}
           {folio.bookType === 'binder' && (
-            <div className="binder-binding">
+            <div
+              className="binder-binding"
+              style={
+                coverTransition
+                  ? { opacity: coverTransition.openProgress }
+                  : undefined
+              }
+            >
               <i />
               <i />
               <i />
@@ -370,7 +393,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
                 back={back}
                 progress={turn.progress}
                 direction={turn.direction}
-                width={width}
+                width={pageWidth}
                 wide={renderWide}
                 binder={folio.bookType === 'binder'}
                 coverTransition={coverTransition}

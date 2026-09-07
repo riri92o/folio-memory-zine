@@ -2682,6 +2682,14 @@ textarea {
   border-radius: 2px;
   transform-style: preserve-3d;
 }
+.read-leaf.cover-void {
+  background: transparent;
+}
+.cover-void-surface {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
 .read-leaf > .page-canvas {
   border-radius: 2px;
   outline: 1px solid #dfe5ed66;
