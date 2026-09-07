@@ -11,12 +11,7 @@ import {
   Check,
   LoaderCircle,
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import {
   newFolio,
   newElement,
@@ -117,193 +112,198 @@ export function CreateDialog({
     }
   }
   return (
-    <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
-      <DialogContent className="creation-flow" showCloseButton={false}>
-        <header className="flow-header">
-          <button
-            className="icon-button"
-            aria-label={step === 0 ? '作成を閉じる' : '前のステップ'}
-            disabled={busy}
-            onClick={() => (step ? setStep(step - 1) : onClose())}
-          >
-            {step === 0 ? <X size={21} /> : <ArrowLeft size={21} />}
-          </button>
-          <span className="wordmark">Folio</span>
-          <span className="step-count">
-            0{step + 1} <i>/</i> 03
-          </span>
-        </header>
-        <div className="flow-progress">
-          {['写真を選ぶ', '雰囲気を選ぶ', 'ページができる'].map((label, i) => (
-            <span
-              key={label}
-              className={i === step ? 'active' : i < step ? 'done' : ''}
+    <DialogPrimitive.Root
+      open
+      onOpenChange={(open) => !open && !busy && onClose()}
+    >
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Backdrop className="creation-overlay" />
+        <DialogPrimitive.Popup className="creation-flow">
+          <header className="flow-header">
+            <button
+              className="icon-button"
+              aria-label={step === 0 ? '作成を閉じる' : '前のステップ'}
+              disabled={busy}
+              onClick={() => (step ? setStep(step - 1) : onClose())}
             >
-              {i < step ? <Check size={13} /> : <b>0{i + 1}</b>}
-              <span>{label}</span>
+              {step === 0 ? <X size={21} /> : <ArrowLeft size={21} />}
+            </button>
+            <span className="wordmark">Folio</span>
+            <span className="step-count">
+              0{step + 1} <i>/</i> 03
             </span>
-          ))}
-        </div>
-        <div className={`flow-body step-${step}`}>
-          <div className="flow-heading">
-            <DialogTitle>
-              {step === 0
-                ? '写真を選ぶ'
-                : step === 1
-                  ? '雰囲気を選ぶ'
-                  : 'ページができました'}
-            </DialogTitle>
-            <DialogDescription>
-              {step === 0
-                ? 'お気に入りの写真を1〜5枚選んでください。'
-                : step === 1
-                  ? '写真に合うデザインを、プレビューから選べます。'
-                  : '別の配置を試すか、そのまま自由に編集できます。'}
-            </DialogDescription>
-          </div>
-          {step === 0 && (
-            <div className="photo-step">
-              <input
-                ref={input}
-                hidden
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => pick(e.target.files)}
-              />
-              {photos.length ? (
-                <div className="chosen-photos">
-                  {photos.map((p, i) => (
-                    <div className="chosen-photo" key={p.id}>
-                      <LocalImage src={p.id} thumb />
-                      <span>{String(i + 1).padStart(2, '0')}</span>
-                      <button
-                        aria-label={`写真${i + 1}を外す`}
-                        className="remove-photo"
-                        onClick={() =>
-                          setPhotos((ps) => ps.filter((x) => x.id !== p.id))
-                        }
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                  {photos.length < 5 && (
-                    <button
-                      className="add-photo-tile"
-                      disabled={busy}
-                      onClick={() => input.current?.click()}
-                    >
-                      <Plus size={28} />
-                      <span>追加する</span>
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <button
-                  className="photo-invitation"
-                  onClick={() => input.current?.click()}
-                  disabled={busy}
+          </header>
+          <div className="flow-progress">
+            {['写真を選ぶ', '雰囲気を選ぶ', 'ページができる'].map(
+              (label, i) => (
+                <span
+                  key={label}
+                  className={i === step ? 'active' : i < step ? 'done' : ''}
                 >
-                  <div className="invitation-icon">
-                    <ImagePlus size={36} />
-                    <span>✦</span>
-                  </div>
-                  <strong>写真を選ぶ</strong>
-                  <span>カメラロールから、好きな瞬間を。</span>
-                  <small>1〜5枚 · 写真は端末の中に保存</small>
-                </button>
-              )}
-              <p className="handwritten flow-handnote">
-                好きな写真から、はじめよう。
-              </p>
+                  {i < step ? <Check size={13} /> : <b>0{i + 1}</b>}
+                  <span>{label}</span>
+                </span>
+              ),
+            )}
+          </div>
+          <div className={`flow-body step-${step}`}>
+            <div className="flow-heading">
+              <DialogPrimitive.Title>
+                {step === 0
+                  ? '写真を選ぶ'
+                  : step === 1
+                    ? '雰囲気を選ぶ'
+                    : 'ページができました'}
+              </DialogPrimitive.Title>
+              <DialogPrimitive.Description>
+                {step === 0
+                  ? 'お気に入りの写真を1〜5枚選んでください。'
+                  : step === 1
+                    ? '写真に合うデザインを、プレビューから選べます。'
+                    : '別の配置を試すか、そのまま自由に編集できます。'}
+              </DialogPrimitive.Description>
             </div>
-          )}
-          {step === 1 && draft && (
-            <div className="theme-step">
-              <div className="theme-main-preview">
-                <PageCanvas page={draft.pages[1]} />
-                <span className="paper-caption">
-                  YOUR PHOTOS, {themes[theme].en} MOOD.
+            {step === 0 && (
+              <div className="photo-step">
+                <input
+                  ref={input}
+                  hidden
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => pick(e.target.files)}
+                />
+                {photos.length ? (
+                  <div className="chosen-photos">
+                    {photos.map((p, i) => (
+                      <div className="chosen-photo" key={p.id}>
+                        <LocalImage src={p.id} thumb />
+                        <span>{String(i + 1).padStart(2, '0')}</span>
+                        <button
+                          aria-label={`写真${i + 1}を外す`}
+                          className="remove-photo"
+                          onClick={() =>
+                            setPhotos((ps) => ps.filter((x) => x.id !== p.id))
+                          }
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    {photos.length < 5 && (
+                      <button
+                        className="add-photo-tile"
+                        disabled={busy}
+                        onClick={() => input.current?.click()}
+                      >
+                        <Plus size={28} />
+                        <span>追加する</span>
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    className="photo-invitation"
+                    onClick={() => input.current?.click()}
+                    disabled={busy}
+                  >
+                    <div className="invitation-icon">
+                      <ImagePlus size={36} />
+                      <span>✦</span>
+                    </div>
+                    <strong>写真を選ぶ</strong>
+                    <span>カメラロールから、好きな瞬間を。</span>
+                    <small>1〜5枚 · 写真は端末の中に保存</small>
+                  </button>
+                )}
+              </div>
+            )}
+            {step === 1 && draft && (
+              <div className="theme-step">
+                <div className="theme-main-preview">
+                  <PageCanvas page={draft.pages[1]} />
+                  <span className="paper-caption">
+                    YOUR PHOTOS, {themes[theme].en} MOOD.
+                  </span>
+                </div>
+                <ThemePicker
+                  value={theme}
+                  onChange={(t) => {
+                    setTheme(t);
+                    compose(t);
+                  }}
+                  page={draft.pages[1]}
+                />
+              </div>
+            )}
+            {step === 2 && draft && (
+              <div className="generated-result">
+                <div className="result-paper" key={draft.pages[1].layoutSeed}>
+                  <PageCanvas page={draft.pages[1]} />
+                </div>
+                <span className="result-note">
+                  ✦　{photos.length}枚の写真が、ひとつのページに。
                 </span>
               </div>
-              <ThemePicker
-                value={theme}
-                onChange={(t) => {
-                  setTheme(t);
-                  compose(t);
-                }}
-                page={draft.pages[1]}
-              />
-            </div>
+            )}
+          </div>
+          {error && (
+            <p className="flow-error" role="alert">
+              {error}
+            </p>
           )}
-          {step === 2 && draft && (
-            <div className="generated-result">
-              <div className="result-paper" key={draft.pages[1].layoutSeed}>
-                <PageCanvas page={draft.pages[1]} />
-              </div>
-              <span className="result-note">
-                ✦　{photos.length}枚の写真が、ひとつのページに。
-              </span>
-            </div>
-          )}
-        </div>
-        {error && (
-          <p className="flow-error" role="alert">
-            {error}
-          </p>
-        )}
-        <footer className="flow-actions">
-          {step === 0 ? (
-            <>
-              <span>
-                {busy ? '写真を準備中…' : `${photos.length}枚 選択中`}
-              </span>
-              <button
-                className="primary"
-                disabled={!photos.length || busy}
-                onClick={() => {
-                  compose();
-                  setStep(1);
-                }}
-              >
-                {busy ? (
-                  <LoaderCircle className="spin" size={18} />
-                ) : (
-                  <>
-                    次へ
-                    <ArrowRight size={18} />
-                  </>
-                )}
+          <footer className="flow-actions">
+            {step === 0 ? (
+              <>
+                <span>
+                  {busy ? '写真を準備中…' : `${photos.length}枚 選択中`}
+                </span>
+                <button
+                  className="primary"
+                  disabled={!photos.length || busy}
+                  onClick={() => {
+                    compose();
+                    setStep(1);
+                  }}
+                >
+                  {busy ? (
+                    <LoaderCircle className="spin" size={18} />
+                  ) : (
+                    <>
+                      次へ
+                      <ArrowRight size={18} />
+                    </>
+                  )}
+                </button>
+              </>
+            ) : step === 1 ? (
+              <button className="primary" onClick={() => setStep(2)}>
+                この雰囲気でつくる
+                <ArrowRight size={18} />
               </button>
-            </>
-          ) : step === 1 ? (
-            <button className="primary" onClick={() => setStep(2)}>
-              この雰囲気でつくる
-              <ArrowRight size={18} />
-            </button>
-          ) : (
-            <>
-              <button
-                className="secondary"
-                disabled={busy}
-                onClick={() => compose()}
-              >
-                <Shuffle size={18} />
-                別のデザイン
-              </button>
-              <button className="primary" disabled={busy} onClick={finish}>
-                {busy ? (
-                  <LoaderCircle className="spin" size={18} />
-                ) : (
-                  <Pencil size={18} />
-                )}
-                自分でアレンジ
-              </button>
-            </>
-          )}
-        </footer>
-      </DialogContent>
-    </Dialog>
+            ) : (
+              <>
+                <button
+                  className="secondary"
+                  disabled={busy}
+                  onClick={() => compose()}
+                >
+                  <Shuffle size={18} />
+                  別のデザイン
+                </button>
+                <button className="primary" disabled={busy} onClick={finish}>
+                  {busy ? (
+                    <LoaderCircle className="spin" size={18} />
+                  ) : (
+                    <Pencil size={18} />
+                  )}
+                  自分でアレンジ
+                </button>
+              </>
+            )}
+          </footer>
+        </DialogPrimitive.Popup>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

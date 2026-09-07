@@ -29,6 +29,7 @@ function CurledPage({
   direction,
   width,
   wide,
+  binder,
 }: {
   front: Page;
   back: Page;
@@ -36,6 +37,7 @@ function CurledPage({
   direction: number;
   width: number;
   wide: boolean;
+  binder: boolean;
 }) {
   const motion = turnMotion(progress, direction);
   const pieces = [];
@@ -86,6 +88,14 @@ function CurledPage({
             style={{ opacity: 0.06 + Math.sin(progress * Math.PI) * 0.15 }}
           />
         </div>
+        {binder && j === 0 && (
+          <div className="turn-punches">
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
+        )}
       </div>,
     );
   }
@@ -303,6 +313,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
                 direction={turn.direction}
                 width={width}
                 wide={wide}
+                binder={folio.bookType === 'binder'}
               />
             </>
           )}

@@ -8,6 +8,9 @@ import {
   ArrowLeft,
   LoaderCircle,
   X,
+  House,
+  Settings,
+  HardDrive,
 } from 'lucide-react';
 import { type Folio, type Photo, normalize, uid } from '@/lib/folio/model';
 import {
@@ -23,12 +26,19 @@ import { CreateDialog } from '@/components/folio/CreateDialog';
 import { Editor } from '@/components/folio/Editor';
 import { Reader } from '@/components/folio/Reader';
 import { Confirm } from '@/components/folio/controls';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from '@/components/ui/sheet';
 export default function Home() {
   const [books, setBooks] = useState<Folio[]>([]),
     [examples, setExamples] = useState<Folio[]>([]),
     [active, setActive] = useState<Folio>(),
     [view, setView] = useState<'home' | 'edit' | 'read'>('home'),
     [create, setCreate] = useState(false),
+    [settings, setSettings] = useState(false),
     [editIndex, setEditIndex] = useState(0),
     [remove, setRemove] = useState<Folio>(),
     [ready, setReady] = useState(false),
@@ -173,32 +183,24 @@ export default function Home() {
               {saving ? '保存中' : saveFailed ? '未保存' : 'このデバイスに保存'}
             </span>
           </span>
-          {view === 'home' ? (
-            <button
-              className="primary new-folio-button"
-              disabled={!ready}
-              onClick={() => setCreate(true)}
-            >
-              <Plus size={20} />
-              <span>New Folio</span>
-            </button>
-          ) : view === 'edit' ? (
-            <button
-              className="icon-button view-book"
-              aria-label="閲覧モードにする"
-              onClick={() => setView('read')}
-            >
-              <BookOpen size={21} />
-            </button>
-          ) : (
-            <button
-              className="icon-button"
-              aria-label="このFolioを編集"
-              onClick={() => active && edit(active)}
-            >
-              <Pencil size={20} />
-            </button>
-          )}
+          {view !== 'home' &&
+            (view === 'edit' ? (
+              <button
+                className="icon-button view-book"
+                aria-label="閲覧モードにする"
+                onClick={() => setView('read')}
+              >
+                <BookOpen size={21} />
+              </button>
+            ) : (
+              <button
+                className="icon-button"
+                aria-label="このFolioを編集"
+                onClick={() => active && edit(active)}
+              >
+                <Pencil size={20} />
+              </button>
+            ))}
         </div>
       </header>
       {error && (
@@ -280,9 +282,6 @@ export default function Home() {
                 </p>
               )}
               <div className="shelf-footer">
-                <span className="handwritten">
-                  写真から、あなただけの一冊を。
-                </span>
                 <p>
                   写真も思い出も、このデバイスの中に。
                   <br />
@@ -306,9 +305,53 @@ export default function Home() {
       ) : active ? (
         <Reader key={active.id} folio={active} onEdit={() => edit(active)} />
       ) : null}
+      {view === 'home' && (
+        <nav className="app-bottom-nav" aria-label="メインナビゲーション">
+          <button
+            className="active"
+            aria-current="page"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          >
+            <House size={21} />
+            <span>ホーム</span>
+          </button>
+          <button
+            className="nav-create"
+            aria-label="新しいFolioを作る"
+            disabled={!ready}
+            onClick={() => setCreate(true)}
+          >
+            <Plus size={28} />
+          </button>
+          <button onClick={() => setSettings(true)}>
+            <Settings size={21} />
+            <span>設定</span>
+          </button>
+        </nav>
+      )}
       {create && (
         <CreateDialog onClose={() => setCreate(false)} onCreate={createBook} />
       )}{' '}
+      <Sheet open={settings} onOpenChange={setSettings}>
+        <SheetContent side="bottom" className="settings-sheet">
+          <SheetTitle>設定</SheetTitle>
+          <SheetDescription>
+            Folioのデータは、この端末のブラウザに保存されます。
+          </SheetDescription>
+          <div className="settings-storage">
+            <span>
+              <HardDrive size={21} />
+            </span>
+            <div>
+              <strong>ローカル保存</strong>
+              <p>写真や冊子データは外部へ送信されません。</p>
+            </div>
+          </div>
+          <p className="settings-note">
+            ブラウザのデータを消すと、保存したFolioも削除されます。
+          </p>
+        </SheetContent>
+      </Sheet>
       {sampleBusy && (
         <output className="busy-overlay">
           <LoaderCircle className="spin" />
