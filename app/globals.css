@@ -2674,6 +2674,21 @@ textarea {
     0 22px 34px #233d6030,
     0 45px 78px #1f36552b;
 }
+.physical-book.cover-moving {
+  transition: none;
+}
+.physical-book.cover-closed {
+  box-shadow: none;
+}
+.physical-book.cover-closed > .read-leaf:nth-child(2) {
+  box-shadow:
+    0 18px 28px #233d602b,
+    0 35px 65px #1f365527;
+}
+.physical-book.cover-closed > .paper-stack {
+  left: 50%;
+  width: 50%;
+}
 .read-leaf {
   flex: 1;
   min-width: 0;
@@ -2755,6 +2770,11 @@ textarea {
   box-shadow:
     0 3px 0 #aebacd,
     0 12px 24px #243c6224;
+}
+.physical-book.binder.cover-closed {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 .physical-book.binder .read-leaf {
   box-shadow:
