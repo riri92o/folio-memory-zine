@@ -1,54 +1,176 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
-import type { Folio, Page } from '@/lib/folio/model';
+import { useEffect, useRef, useState, memo } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { type Folio, type Page, paper } from '@/lib/folio/model';
 import { PageCanvas } from './PageCanvas';
-export function Reader({
-  folio,
-  onEdit,
+import { useWide } from './useWide';
+import { turnGeometry } from '@/lib/folio/turn';
+const blank: Page = {
+  id: 'endpaper',
+  folioId: 'reader',
+  pageNumber: 0,
+  isCover: true,
+  background: paper('white'),
+  layoutSeed: 0,
+  elements: [],
+  doodles: [],
+  doodlesVisible: false,
+};
+const TurningFace = memo(function TurningFace({ page }: { page: Page }) {
+  return <PageCanvas page={page} thumb />;
+});
+const strips = 7;
+// Piecewise cylindrical bend. Adjacent segments share endpoints, so the page
+// remains a continuous surface through the turn; both faces stay visible.
+function CurledPage({
+  front,
+  back,
+  progress,
+  direction,
+  width,
+  wide,
 }: {
-  folio: Folio;
-  onEdit: () => void;
+  front: Page;
+  back: Page;
+  progress: number;
+  direction: number;
+  width: number;
+  wide: boolean;
 }) {
-  const [index, setIndex] = useState(0),
-    [wide, setWide] = useState(false),
-    [turn, setTurn] = useState<{ page: Page; direction: number }>();
-  const touch = useRef<[number, number] | null>(null),
-    timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => {
-    const mq = matchMedia(
-      '(min-width: 800px), (orientation: landscape) and (min-width: 640px)',
+  const pieces = [];
+  for (const { index: j, angle, left, z, origin } of turnGeometry(
+    progress,
+    direction,
+    width,
+    strips,
+  )) {
+    pieces.push(
+      <div
+        className="curl-strip"
+        key={j}
+        style={{
+          width: `${100 / strips + 0.035}%`,
+          left: `${left * 100}%`,
+          transform: `translateZ(${z}px) rotateY(${angle}rad)`,
+          transformOrigin: origin,
+        }}
+      >
+        <div className="curl-front">
+          <div
+            className="curl-content"
+            style={{ width: `${strips * 100}%`, left: `${-j * 100}%` }}
+          >
+            <TurningFace page={front} />
+          </div>
+          <div
+            className="curl-light"
+            style={{
+              opacity:
+                Math.sin(progress * Math.PI) * (0.08 + (j / strips) * 0.25),
+            }}
+          />
+        </div>
+        <div className="curl-back">
+          <div
+            className="curl-content"
+            style={{
+              width: `${strips * 100}%`,
+              left: `${-(strips - 1 - j) * 100}%`,
+            }}
+          >
+            <TurningFace page={back} />
+          </div>
+          <div
+            className="curl-light"
+            style={{ opacity: 0.06 + Math.sin(progress * Math.PI) * 0.15 }}
+          />
+        </div>
+      </div>,
     );
-    const set = () => {
-      setWide(mq.matches);
-      setIndex(0);
-    };
-    set();
-    mq.addEventListener('change', set);
-    return () => {
-      mq.removeEventListener('change', set);
-      clearTimeout(timer.current);
-    };
-  }, []);
-  const step = wide ? 2 : 1;
+  }
+  return (
+    <div
+      aria-hidden
+      className={`curl-page ${wide && direction > 0 ? 'from-right' : ''}`}
+    >
+      {pieces}
+    </div>
+  );
+}
+export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
+  const wide = useWide(),
+    [index, setIndex] = useState(0),
+    [turn, setTurn] = useState<{
+      from: number;
+      to: number;
+      direction: number;
+      progress: number;
+    }>(),
+    [width, setWidth] = useState(340);
+  const ref = useRef<HTMLDivElement>(null),
+    raf = useRef(0),
+    gesture = useRef<
+      | {
+          x: number;
+          y: number;
+          direction: number;
+          progress: number;
+          active: boolean;
+        }
+      | undefined
+    >(undefined),
+    live = useRef<typeof turn>(undefined);
+  const step = wide ? 2 : 1,
+    baseIndex = Math.min(index, folio.pages.length - 1);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const observer = new ResizeObserver((entries) =>
+      setWidth(entries[0].contentRect.width / (wide ? 2 : 1)),
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [wide]);
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  function frame(value: typeof turn) {
+    live.current = value;
+    setTurn(value);
+  }
+  function animate(target: number) {
+    const currentTurn = live.current;
+    if (!currentTurn) return;
+    const initial = currentTurn;
+    cancelAnimationFrame(raf.current);
+    const start = performance.now(),
+      from = initial.progress,
+      duration = matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 1
+        : Math.max(220, 680 * Math.abs(target - from));
+    function tick(now: number) {
+      const t = Math.min(1, (now - start) / duration),
+        eased = t * t * (3 - 2 * t);
+      frame({ ...initial, progress: from + (target - from) * eased });
+      if (t < 1) raf.current = requestAnimationFrame(tick);
+      else {
+        if (target === 1) setIndex(initial.to);
+        frame(undefined);
+      }
+    }
+    raf.current = requestAnimationFrame(tick);
+  }
+  function begin(direction: number) {
+    const to = baseIndex + direction * step;
+    if (to < 0 || to >= folio.pages.length) return false;
+    frame({ from: baseIndex, to, direction, progress: 0 });
+    return true;
+  }
   function flip(direction: number) {
-    if (turn) return;
-    const next = index + direction * step;
-    if (next < 0 || next >= folio.pages.length) return;
-    setTurn({
-      page: folio.pages[
-        direction > 0
-          ? Math.min(index + step - 1, folio.pages.length - 1)
-          : index
-      ],
-      direction,
-    });
-    setIndex(next);
-    timer.current = setTimeout(() => setTurn(undefined), 720);
+    if (live.current) return;
+    if (begin(direction)) animate(1);
   }
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).closest('input,textarea')) return;
+      if ((e.target as HTMLElement).closest('input,textarea,button')) return;
       if (e.key === 'ArrowRight') {
         e.preventDefault();
         flip(1);
@@ -61,65 +183,107 @@ export function Reader({
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   });
+  let left = folio.pages[baseIndex],
+    right = folio.pages[baseIndex + 1] || blank;
+  if (turn) {
+    if (!wide) left = folio.pages[turn.to];
+    else if (turn.direction > 0) right = folio.pages[turn.to + 1] || blank;
+    else left = folio.pages[turn.to];
+  }
+  const front = turn
+    ? folio.pages[
+        turn.direction > 0
+          ? Math.min(turn.from + step - 1, folio.pages.length - 1)
+          : turn.from
+      ]
+    : blank;
+  const back = turn
+    ? folio.pages[
+        turn.direction > 0
+          ? turn.to
+          : Math.min(turn.to + step - 1, folio.pages.length - 1)
+      ]
+    : blank;
   return (
     <main className="reader">
-      <div className="reader-heading">
-        <div className="eyebrow">A MOMENT TO LOOK BACK</div>
-        <h1>{folio.title}</h1>
-        {folio.subtitle && <p>{folio.subtitle}</p>}
-        {folio.sample && (
-          <span className="sample-label">
-            サンプル · 編集すると自分の本棚にコピーされます
-          </span>
-        )}
+      <div className="reading-title">
+        <span>{folio.title}</span>
+        {folio.sample && <small>サンプル</small>}
       </div>
-      <div className="reader-stage">
+      <div className="reading-stage">
         <button
-          className="turn-button prev"
+          className="reader-arrow prev"
           aria-label="前のページ"
-          disabled={index === 0 || !!turn}
+          disabled={baseIndex === 0 || !!turn}
           onClick={() => flip(-1)}
         >
-          <ChevronLeft />
+          <ChevronLeft size={21} />
         </button>
         <div
-          className={`read-spread ${wide ? 'wide' : ''} ${folio.bookType}`}
+          ref={ref}
+          className={`physical-book ${wide ? 'wide' : ''} ${folio.bookType}`}
           onPointerDown={(e) => {
-            touch.current = [e.clientX, e.clientY];
+            if (live.current || e.button !== 0) return;
+            gesture.current = {
+              x: e.clientX,
+              y: e.clientY,
+              direction: 0,
+              progress: 0,
+              active: false,
+            };
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            const g = gesture.current;
+            if (!g) return;
+            const dx = e.clientX - g.x,
+              dy = e.clientY - g.y;
+            if (!g.active) {
+              if (Math.abs(dx) < 9 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+              g.direction = dx < 0 ? 1 : -1;
+              if (!begin(g.direction)) {
+                gesture.current = undefined;
+                return;
+              }
+              g.active = true;
+            }
+            const progress = Math.max(
+              0,
+              Math.min(0.99, (-dx * g.direction) / (width * 0.9)),
+            );
+            g.progress = progress;
+            if (live.current) frame({ ...live.current, progress });
           }}
           onPointerUp={(e) => {
-            const s = touch.current;
-            touch.current = null;
-            if (
-              s &&
-              Math.abs(e.clientX - s[0]) > 45 &&
-              Math.abs(e.clientX - s[0]) > Math.abs(e.clientY - s[1]) * 1.3
-            )
-              flip(e.clientX < s[0] ? 1 : -1);
+            const g = gesture.current;
+            gesture.current = undefined;
+            if (e.currentTarget.hasPointerCapture(e.pointerId))
+              e.currentTarget.releasePointerCapture(e.pointerId);
+            if (g?.active) animate(g.progress > 0.17 ? 1 : 0);
           }}
           onPointerCancel={() => {
-            touch.current = null;
+            gesture.current = undefined;
+            if (live.current) animate(0);
           }}
         >
-          {
-            <div className="read-leaf">
-              <PageCanvas page={folio.pages[index]} />
-            </div>
-          }
+          <div className="read-leaf">
+            <PageCanvas page={left} />
+          </div>
           {wide && (
             <div className="read-leaf">
-              {folio.pages[index + 1] ? (
-                <PageCanvas page={folio.pages[index + 1]} />
-              ) : (
+              {right.id === blank.id ? (
                 <div className="endpaper">
-                  <span>Folio®</span>
-                  <p>またひとつ、思い出。</p>
+                  <span className="wordmark">Folio</span>
+                  <p className="handwritten">Until the next moment.</p>
                 </div>
+              ) : (
+                <PageCanvas page={right} />
               )}
             </div>
           )}
+          {folio.bookType === 'book' && wide && <div className="book-gutter" />}
           {folio.bookType === 'binder' && (
-            <div className="binder-rings">
+            <div className="binder-binding">
               <i />
               <i />
               <i />
@@ -127,33 +291,45 @@ export function Reader({
             </div>
           )}
           {turn && (
-            <div className={`turning-page ${turn.direction < 0 ? 'back' : ''}`}>
-              <PageCanvas page={turn.page} />
-              <div className="turn-shade" />
-            </div>
+            <>
+              <div
+                className="cast-page-shadow"
+                style={{
+                  opacity: Math.sin(turn.progress * Math.PI) * 0.2,
+                  transform: `scaleX(${0.3 + Math.sin(turn.progress * Math.PI) * 0.7})`,
+                }}
+              />
+              <CurledPage
+                front={front}
+                back={back}
+                progress={turn.progress}
+                direction={turn.direction}
+                width={width}
+                wide={wide}
+              />
+            </>
           )}
+          <div className="paper-stack" />
         </div>
         <button
-          className="turn-button next"
+          className="reader-arrow next"
           aria-label="次のページ"
-          disabled={index + step >= folio.pages.length || !!turn}
+          disabled={baseIndex + step >= folio.pages.length || !!turn}
           onClick={() => flip(1)}
         >
-          <ChevronRight />
+          <ChevronRight size={21} />
         </button>
       </div>
-      <div className="reader-bottom">
+      <div className="reading-footer">
         <span>
-          {index === 0 ? '表紙' : index}{' '}
-          {wide && folio.pages[index + 1] ? `— ${index + 1}` : ''}
-          <span className="separator">/</span>
-          {folio.pages.length - 1}
+          {baseIndex === 0 ? 'Cover' : String(baseIndex).padStart(2, '0')}
+          {wide && folio.pages[baseIndex + 1]
+            ? ` — ${String(baseIndex + 1).padStart(2, '0')}`
+            : ''}
+          <i>/</i>
+          {String(folio.pages.length - 1).padStart(2, '0')}
         </span>
-        <p>横にスワイプして、ページをめくる</p>
-        <button className="secondary" onClick={onEdit}>
-          <Pencil size={16} />
-          このFolioを編集
-        </button>
+        <p>ページの端を、ゆっくり横へ。</p>
       </div>
     </main>
   );

@@ -7,7 +7,7 @@ import ts from 'typescript';
 import 'fake-indexeddb/auto';
 const directory = await mkdtemp(path.join(tmpdir(), 'folio-tests-'));
 try {
-  for (const name of ['model', 'layout', 'storage']) {
+  for (const name of ['model', 'layout', 'storage', 'turn']) {
     const input = await readFile(
       new URL(`../lib/folio/${name}.ts`, import.meta.url),
       'utf8',
@@ -47,25 +47,97 @@ try {
           assert.ok(
             photo.x + photo.width <= 100.01 && photo.y + photo.height <= 100.01,
           );
-          assert.ok(
-            Math.abs(photo.width / photo.height / 1.414 - photo.aspect) < 0.001,
-            'source aspect ratio preserved',
-          );
+          if (photo.style.fit !== 'cover')
+            assert.ok(
+              Math.abs(photo.width / photo.height / 1.414 - photo.aspect) <
+                0.001,
+              'source aspect ratio preserved',
+            );
         }
+        assert.ok(
+          layout.elements.filter((e) => e.type === 'sticker' && e.style.auto)
+            .length <= 3,
+          'automatic decoration stays restrained',
+        );
         const second = generateLayout(page, theme, seed).elements.filter(
           (e) => e.type === 'photo',
         );
         assert.deepEqual(photos, second, 'seed is deterministic');
-        const varied = generateLayout(page, theme, seed + 123).elements.filter(
-          (e) => e.type === 'photo',
-        );
-        assert.notDeepEqual(
-          photos,
-          varied,
-          'another design has a different composition',
-        );
+        const varied = generateLayout(page, theme, seed + 123);
+        const geometry = (p) => p.elements.map(({ id: _id, ...e }) => e);
+        if (
+          !(
+            photos.length === 1 &&
+            photos[0].style.fit === 'cover' &&
+            layout.elements.length === 1
+          )
+        )
+          assert.notDeepEqual(
+            geometry(layout),
+            geometry(varied),
+            'another design changes the composition',
+          );
         tested++;
       }
+  const { turnGeometry } = await import(
+    pathToFileURL(path.join(directory, 'turn.mjs'))
+  );
+  for (const direction of [-1, 1])
+    for (let i = 0; i <= 20; i++) {
+      const pieces = turnGeometry(i / 20, direction, 350),
+        count = pieces.length;
+      for (let j = 0; j < count - 1; j++) {
+        const a = pieces[j],
+          b = pieces[j + 1];
+        assert.ok(
+          Math.abs(
+            b.z - (a.z - (direction * Math.sin(a.angle) * 350) / count),
+          ) < 1e-8,
+          'curl strips share their depth endpoints',
+        );
+        assert.ok(
+          Math.abs(
+            b.left - (a.left + (direction * Math.cos(a.angle)) / count),
+          ) < 1e-8,
+          'curl strips stay connected',
+        );
+      }
+      if (i === 0)
+        assert.deepEqual(
+          pieces.map((p) => p.index).sort((a, b) => a - b),
+          [0, 1, 2, 3, 4, 5, 6],
+        );
+      if (i === 10)
+        assert.ok(
+          pieces.some((p) => p.z > 0),
+          'page edge lifts toward the reader',
+        );
+    }
+  const heroIds = new Set(),
+    structures = new Set();
+  const three = model.newPage('variation', 1, 'white');
+  three.elements = [0, 1, 2].map((i) => ({
+    ...model.newElement('photo'),
+    aspect: 1.5,
+    imageRef: 'photo-' + i,
+  }));
+  for (let seed = 100; seed < 150; seed++) {
+    const p = generateLayout(three, 'scrap', seed, { varyPaper: true }),
+      photos = p.elements.filter((e) => e.type === 'photo');
+    heroIds.add(photos[0].imageRef);
+    structures.add(
+      photos[0].width > 65
+        ? 'wide'
+        : photos[0].height > 45
+          ? 'tall'
+          : 'collage',
+    );
+  }
+  assert.equal(heroIds.size, 3, 'all photos can become the hero');
+  assert.ok(
+    structures.size >= 2,
+    'three photos use structurally different compositions',
+  );
   const locked = model.newPage('lock', 1, 'white');
   const lockedPhoto = {
     ...model.newElement('photo'),
@@ -158,7 +230,7 @@ try {
     'unreferenced image is removed',
   );
   console.log(
-    `PASS: ${tested} layouts across 8 themes; deterministic seeds, variation, bounds, aspect ratios, locks; IndexedDB Blob/doodle round trip, atomic rollback, page deletion and shared-image cleanup.`,
+    `PASS: ${tested} layouts across 8 themes; deterministic seeds, variation, bounds, aspect ratios, locks; IndexedDB Blob/doodle round trip, atomic rollback, page deletion and shared-image cleanup; connected paper curl geometry and changing hero photos.`,
   );
 } finally {
   await rm(directory, { recursive: true, force: true });

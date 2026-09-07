@@ -16,49 +16,62 @@ import {
   Unlock,
   ArrowUp,
   ArrowDown,
-  MousePointer2,
   BookOpen,
+  Layers,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  Settings2,
+  Sparkles,
+  MoveUp,
+  MoveDown,
 } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import {
   type Folio,
   type Page,
   type Photo,
   type Element,
   type ThemeId,
-  type PaperId,
-  themes,
-  paperNames,
-  readableInk,
   paper,
+  readableInk,
   newPage,
   newElement,
   normalize,
-  stickers,
+  themes,
   uid,
 } from '@/lib/folio/model';
 import { generateLayout } from '@/lib/folio/layout';
 import { importPhoto } from '@/lib/folio/storage';
 import { PageCanvas, type DrawSettings } from './PageCanvas';
-import { Choice, Range, Confirm } from './controls';
+import { Confirm } from './controls';
+import { ToolContent, ElementPanel, BookSettings } from './EditorPanels';
+import { useWide } from './useWide';
 export function Editor({
   folio,
   onChange,
   onView,
   onError,
+  initialIndex = 0,
 }: {
   folio: Folio;
   onChange: (f: Folio, p?: Photo[]) => Promise<void>;
   onView: () => void;
   onError: (s: string) => void;
+  initialIndex?: number;
 }) {
-  const [index, setIndex] = useState(0),
+  const [index, setIndex] = useState(initialIndex),
     [selected, setSelected] = useState<string>(),
-    [tab, setTab] = useState('photos'),
+    [tool, setTool] = useState('photos'),
+    [panelOpen, setPanelOpen] = useState(false),
     [draw, setDraw] = useState<DrawSettings>({
       tool: 'pen',
-      color: '#f45d35',
+      color: '#2463eb',
       width: 4,
     }),
     [drawing, setDrawing] = useState(false),
@@ -71,6 +84,7 @@ export function Editor({
   useEffect(() => {
     current.current = folio;
   }, [folio]);
+  const wide = useWide();
   const page = folio.pages[Math.min(index, folio.pages.length - 1)],
     el = page.elements.find((e) => e.id === selected),
     photoCount = page.elements.filter((e) => e.type === 'photo').length;
@@ -110,7 +124,13 @@ export function Editor({
     updatePage({
       ...page,
       elements: page.elements.map((e) =>
-        e.id === el.id ? { ...e, ...change } : e,
+        e.id === el.id
+          ? {
+              ...e,
+              ...change,
+              style: { ...e.style, ...change.style, auto: false },
+            }
+          : e,
       ),
     });
   }
@@ -222,6 +242,7 @@ export function Editor({
         },
         imported,
       );
+      setPanelOpen(false);
     } catch (e) {
       onError((e as Error).message);
     } finally {
@@ -230,599 +251,503 @@ export function Editor({
     }
   }
   function addElement(e: Element) {
-    e.zIndex = Math.max(e.zIndex, ...page.elements.map((v) => v.zIndex + 1));
+    e.zIndex = Math.max(30, ...page.elements.map((v) => v.zIndex + 1));
+    e.style = { ...e.style, auto: false };
     updatePage({ ...page, elements: [...page.elements, e] });
     setSelected(e.id);
     setDrawing(false);
+    if (e.type === 'text') {
+      setTool('element');
+      setPanelOpen(true);
+    } else setPanelOpen(false);
   }
+  function duplicate() {
+    if (el && !el.locked)
+      addElement({
+        ...el,
+        id: uid(),
+        x: Math.min(100 - el.width, el.x + 3),
+        y: Math.min(100 - el.height, el.y + 3),
+      });
+  }
+  function removeElement() {
+    if (!el || el.locked) return;
+    updatePage({
+      ...page,
+      elements: page.elements.filter((e) => e.id !== el.id),
+    });
+    setSelected(undefined);
+    setPanelOpen(false);
+  }
+  function layer(direction: number) {
+    if (!el || el.locked) return;
+    const ordered = page.elements
+      .filter((e) => e.id !== el.id)
+      .sort((a, b) => a.zIndex - b.zIndex);
+    if (direction > 0) ordered.push(el);
+    else ordered.unshift(el);
+    updatePage({
+      ...page,
+      elements: ordered.map((e, i) => ({ ...e, zIndex: 10 + i })),
+    });
+  }
+  function patch(change: Partial<Element>) {
+    if (change.zIndex !== undefined && el) {
+      layer(change.zIndex > el.zIndex ? 1 : -1);
+      return;
+    }
+    patchElement(change);
+  }
+  function openTool(name: string) {
+    setTool(name);
+    setPanelOpen(true);
+    if (name !== 'draw') setDrawing(false);
+  }
+  function changeTheme(theme: ThemeId) {
+    commit({
+      ...folio,
+      theme,
+      paperType: themes[theme].paper,
+      pages: folio.pages.map((p) =>
+        p.id === page.id
+          ? generateLayout(
+              { ...p, background: paper(themes[theme].paper) },
+              theme,
+              Date.now(),
+              { varyPaper: true },
+            )
+          : p,
+      ),
+    });
+    setSelected(undefined);
+  }
+  function addPage() {
+    if (folio.pages.length >= 15) return;
+    const p = newPage(folio.id, folio.pages.length, folio.paperType);
+    commit({ ...folio, pages: [...folio.pages, p] });
+    setIndex(folio.pages.length);
+    setSelected(undefined);
+    setPanelOpen(false);
+  }
+  function reorder(from: number, to: number) {
+    if (from === 0 || to === 0 || from === to || to >= folio.pages.length)
+      return;
+    const pages = [...folio.pages],
+      moved = pages.splice(from, 1)[0];
+    pages.splice(to, 0, moved);
+    commit({ ...folio, pages });
+    setIndex(pages.findIndex((p) => p.id === page.id));
+  }
+  const indices = wide
+    ? [Math.floor(index / 2) * 2, Math.floor(index / 2) * 2 + 1]
+    : [index];
+  const titles: Record<string, string> = {
+    photos: '写真を、もう一枚。',
+    text: '言葉を添える。',
+    stickers: '小さな、ひと工夫。',
+    draw: 'そのまま、描いてみよう。',
+    paper: 'このページに似合う紙。',
+    theme: '気分を変えてみる。',
+    pages: '一冊の、ながれ。',
+    book: 'このFolioについて',
+    element: '自分らしく調整。',
+  };
+  const inspector = el ? (
+    <ElementPanel
+      el={el}
+      photoCount={photoCount}
+      onPatch={patch}
+      onDuplicate={duplicate}
+      onDelete={removeElement}
+    />
+  ) : (
+    <div className="inspector-empty">
+      <span className="handwritten">Make it yours.</span>
+      <span className="empty-selection-icon">
+        <Settings2 size={25} />
+      </span>
+      <p>
+        写真や文字に触れて、
+        <br />
+        好きなところへ。
+      </p>
+      <small>
+        角を引いて大きさを変えたり、
+        <br />
+        少し傾けたり。きっちりじゃなくていい。
+      </small>
+    </div>
+  );
   return (
-    <div className="editor-layout">
-      <div className="editor-work">
-        <div className="canvas-top">
-          <span>
-            {page.isCover ? '表紙' : `PAGE ${String(index).padStart(2, '0')}`}{' '}
-            <small> / {folio.pageCount - 1} ページ</small>
-          </span>
-          <div className="icon-row">
+    <div className={`studio ${drawing ? 'pen-active' : ''}`}>
+      <input
+        hidden
+        ref={input}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={(e) => photos(e.target.files)}
+      />
+      <div className="studio-workspace">
+        <aside className="page-rail">
+          <div className="rail-title">
+            <span>Pages</span>
+            <small>{folio.pageCount}/15</small>
+          </div>
+          <PageRail
+            folio={folio}
+            index={index}
+            onSelect={(i) => {
+              setIndex(i);
+              setSelected(undefined);
+            }}
+            onReorder={reorder}
+          />
+          <button
+            className="rail-add"
+            disabled={folio.pageCount >= 15}
+            onClick={addPage}
+          >
+            <Plus size={18} />
+            <span>ページを追加</span>
+          </button>
+          <button className="rail-book" onClick={() => openTool('book')}>
+            <BookOpen size={17} />
+            冊子の設定
+          </button>
+        </aside>
+        <div className="studio-center">
+          <div className="canvas-controls">
             <button
-              className="icon-button"
-              aria-label="元に戻す"
-              disabled={!history.length}
-              onClick={undo}
+              className="current-page-label"
+              onClick={() => openTool('pages')}
             >
-              <Undo2 size={19} />
+              <Layers size={16} />
+              {page.isCover
+                ? 'Cover'
+                : `Page ${String(index).padStart(2, '0')}`}
+              <span>⌄</span>
             </button>
+            <div className="history-controls">
+              <button
+                className="icon-button"
+                aria-label="元に戻す"
+                disabled={!history.length}
+                onClick={undo}
+              >
+                <Undo2 size={18} />
+              </button>
+              <button
+                className="icon-button"
+                aria-label="やり直す"
+                disabled={!future.length}
+                onClick={redo}
+              >
+                <Redo2 size={18} />
+              </button>
+            </div>
             <button
-              className="icon-button"
-              aria-label="やり直す"
-              disabled={!future.length}
-              onClick={redo}
+              className="regenerate-page"
+              disabled={!photoCount}
+              onClick={() => {
+                setSelected(undefined);
+                updatePage(
+                  generateLayout(page, folio.theme, Date.now(), {
+                    varyPaper: true,
+                  }),
+                );
+              }}
             >
-              <Redo2 size={19} />
-            </button>
-            <button
-              className="icon-button danger"
-              aria-label="ページを削除"
-              disabled={page.isCover}
-              onClick={() => setConfirm(true)}
-            >
-              <Trash2 size={18} />
+              <Shuffle size={15} />
+              <span>別のデザイン</span>
             </button>
           </div>
-        </div>
-        <div className={`edit-spread ${folio.bookType}`}>
-          <div className="current-page">
-            <PageCanvas
-              page={page}
-              selected={selected}
-              onSelect={setSelected}
-              onChange={updatePage}
-              draw={drawing ? draw : undefined}
-            />
+          <div className="studio-stage">
+            <div
+              className={`editing-spread ${wide ? 'wide' : ''} ${folio.bookType}`}
+            >
+              {indices.map((i) =>
+                folio.pages[i] ? (
+                  <div
+                    className={`editing-leaf ${i === index ? 'active' : ''}`}
+                    key={folio.pages[i].id}
+                  >
+                    <PageCanvas
+                      page={folio.pages[i]}
+                      selected={i === index ? selected : undefined}
+                      onSelect={(id) => {
+                        setIndex(i);
+                        setSelected(id);
+                      }}
+                      onChange={updatePage}
+                      draw={drawing ? draw : undefined}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    key="blank"
+                    className="blank-leaf"
+                    onClick={addPage}
+                    disabled={folio.pageCount >= 15}
+                  >
+                    <Plus size={25} />
+                    <span>次のページをつくる</span>
+                  </button>
+                ),
+              )}
+              {folio.bookType === 'binder' && (
+                <div className="binder-binding">
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                </div>
+              )}
+              {!page.elements.length && (
+                <button
+                  className="empty-page-action"
+                  onClick={() => openTool('photos')}
+                >
+                  <ImagePlus size={27} />
+                  <span>ここから、はじめよう。</span>
+                  <small>写真を追加する</small>
+                </button>
+              )}
+            </div>
           </div>
-          {folio.pages[index + 1] && (
+          <div className="canvas-status">
             <button
-              className="neighbor-page"
+              className="icon-button"
+              aria-label="前のページを編集"
+              disabled={index === 0}
+              onClick={() => {
+                setIndex(index - 1);
+                setSelected(undefined);
+              }}
+            >
+              <ChevronLeft size={17} />
+            </button>
+            <span>
+              {drawing
+                ? '写真の上にも、余白にも。そのまま描けます。'
+                : selected
+                  ? '好きなところへ、自由に。'
+                  : '写真や文字にタップして、アレンジ。'}
+            </span>
+            <button
+              className="icon-button"
               aria-label="次のページを編集"
+              disabled={index === folio.pages.length - 1}
               onClick={() => {
                 setIndex(index + 1);
                 setSelected(undefined);
               }}
             >
-              <PageCanvas page={folio.pages[index + 1]} thumb />
+              <ChevronRight size={17} />
             </button>
-          )}
-          {folio.bookType === 'binder' && (
-            <div className="binder-rings">
-              <i />
-              <i />
-              <i />
-              <i />
-            </div>
-          )}
+          </div>
         </div>
-        <div className="canvas-hint">
-          {drawing
-            ? '写真の上にも、そのまま描けます。'
-            : el
-              ? 'ドラッグで移動。右下でサイズ、上のハンドルで回転。'
-              : '写真を追加して、自分だけのページに。'}
-        </div>
-        <nav className="page-strip" aria-label="ページ一覧">
-          {folio.pages.map((p, i) => (
-            <button
-              key={p.id}
-              className={index === i ? 'active' : ''}
-              onClick={() => {
-                setIndex(i);
-                setSelected(undefined);
-              }}
-            >
-              <div>
-                <PageCanvas page={p} thumb />
-              </div>
-              <span>{i === 0 ? '表紙' : String(i).padStart(2, '0')}</span>
+        <aside className="selection-panel">
+          {inspector}
+          <div className="selection-footer">
+            <span>{themes[folio.theme].en}</span>
+            <button onClick={onView}>
+              <BookOpen size={16} />
+              めくってみる
             </button>
-          ))}
-          <button
-            className="add-page"
-            disabled={folio.pages.length >= 15}
-            onClick={() => {
-              const p = newPage(folio.id, folio.pages.length, folio.paperType);
-              commit({ ...folio, pages: [...folio.pages, p] });
-              setIndex(folio.pages.length);
-              setSelected(undefined);
-            }}
-          >
-            <Plus size={22} />
-            <span>追加</span>
-          </button>
-        </nav>
-        <div className="page-limit">
-          表紙を含め {folio.pages.length} / 15 ページ
-        </div>
+          </div>
+        </aside>
       </div>
-      <aside className="tool-panel">
-        <div className="panel-title">
-          <h2>自分らしく、アレンジ。</h2>
-          <p>ぴったり収めなくても、いい感じ。</p>
+      {selected && !drawing && el && (
+        <div className="floating-selection">
+          <button
+            aria-label="選択中の要素を編集"
+            onClick={() => openTool('element')}
+          >
+            <Settings2 size={18} />
+          </button>
+          <button
+            aria-label="前面へ"
+            disabled={el.locked}
+            onClick={() => layer(1)}
+          >
+            <ArrowUp size={18} />
+          </button>
+          <button
+            aria-label="背面へ"
+            disabled={el.locked}
+            onClick={() => layer(-1)}
+          >
+            <ArrowDown size={18} />
+          </button>
+          <button
+            aria-label="複製"
+            disabled={el.locked || (el.type === 'photo' && photoCount >= 5)}
+            onClick={duplicate}
+          >
+            <Copy size={17} />
+          </button>
+          <button
+            aria-label={el.locked ? 'ロック解除' : 'ロック'}
+            onClick={() => patchElement({ locked: !el.locked })}
+          >
+            {el.locked ? <Lock size={17} /> : <Unlock size={17} />}
+          </button>
+          <button
+            aria-label="要素を削除"
+            disabled={el.locked}
+            onClick={removeElement}
+          >
+            <Trash2 size={17} />
+          </button>
+          <button
+            aria-label="選択を解除"
+            onClick={() => setSelected(undefined)}
+          >
+            <Check size={18} />
+          </button>
         </div>
-        <Tabs
-          value={tab}
-          onValueChange={(v) => {
-            setTab(String(v));
-            setDrawing(v === 'draw');
-            setSelected(undefined);
-          }}
+      )}
+      {drawing && (
+        <div className="drawing-ribbon">
+          <button className="current-pen" onClick={() => openTool('draw')}>
+            <PenLine size={18} />
+            <i style={{ background: draw.color }} />
+            <span>{draw.width}px</span>
+          </button>
+          <button
+            onClick={() =>
+              setDraw({
+                ...draw,
+                tool: draw.tool === 'eraser' ? 'pen' : 'eraser',
+              })
+            }
+          >
+            {draw.tool === 'eraser' ? 'ペンに戻る' : '消しゴム'}
+          </button>
+          <button onClick={() => setDrawing(false)}>
+            <Check size={16} />
+            できた
+          </button>
+        </div>
+      )}
+      <nav className="creative-dock" aria-label="編集ツール">
+        {[
+          ['photos', ImagePlus, '写真'],
+          ['text', Type, '文字'],
+          ['stickers', Sticker, 'ステッカー'],
+          ['draw', PenLine, 'ペン'],
+          ['paper', Palette, '紙'],
+          ['theme', Sparkles, 'テーマ'],
+        ].map(([id, Icon, label]) => {
+          const I = Icon as typeof ImagePlus;
+          return (
+            <button
+              className={
+                (panelOpen && tool === id) || (drawing && id === 'draw')
+                  ? 'active'
+                  : ''
+              }
+              key={id as string}
+              onClick={() => openTool(id as string)}
+            >
+              <I size={22} />
+              <span>{label as string}</span>
+            </button>
+          );
+        })}
+      </nav>
+      <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
+        <SheetContent
+          side={wide ? 'right' : 'bottom'}
+          className={`studio-sheet ${wide ? 'desktop-sheet' : ''}`}
         >
-          <TabsList className="tool-tabs">
-            {[
-              ['photos', ImagePlus, '写真'],
-              ['text', Type, '文字'],
-              ['stickers', Sticker, '装飾'],
-              ['draw', PenLine, '落書き'],
-              ['design', Palette, '紙・テーマ'],
-            ].map(([id, Icon, label]) => {
-              const I = Icon as typeof ImagePlus;
-              return (
-                <TabsTrigger value={id as string} key={id as string}>
-                  <I size={19} />
-                  <span>{label as string}</span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-          <TabsContent value="photos">
-            <input
-              hidden
-              ref={input}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => photos(e.target.files)}
-            />
-            <button
-              className="upload-zone"
-              disabled={busy || photoCount >= 5}
-              onClick={() => input.current?.click()}
-            >
-              <ImagePlus size={30} />
-              <strong>{busy ? '写真を準備しています…' : '写真を追加'}</strong>
-              <span>{photoCount} / 5 枚 · このページに追加</span>
-            </button>
-            <button
-              className="secondary full"
-              disabled={!photoCount}
-              onClick={() => {
-                setSelected(undefined);
-                updatePage(generateLayout(page, folio.theme, Date.now()));
-              }}
-            >
-              <Shuffle size={18} />
-              別のデザインにする
-            </button>
-            <p className="help">
-              自動で配置したら、写真をタップして自由に調整。写真の全体を表示するので、顔も切れにくくなります。
-            </p>
-          </TabsContent>
-          <TabsContent value="text">
-            <button
-              className="secondary full"
-              onClick={() =>
-                addElement({
-                  ...newElement('text', 'あの日のこと。'),
-                  style: {
-                    fontSize: 28,
-                    color: readableInk(
-                      page.background.color,
-                      themes[folio.theme].ink,
-                    ),
-                  },
-                })
-              }
-            >
-              <Plus size={18} />
-              テキストを追加
-            </button>
-            <p className="help">
-              タイトルも、短いひとことも。追加した文字を選ぶと編集できます。
-            </p>
-          </TabsContent>
-          <TabsContent value="stickers">
-            <p className="mini-label">このテーマにおすすめ</p>
-            <div className="sticker-grid">
-              {Object.entries(stickers)
-                .sort(
-                  ([a], [b]) =>
-                    (b === themes[folio.theme].decor ? 1 : 0) -
-                    (a === themes[folio.theme].decor ? 1 : 0),
-                )
-                .map(([id, s]) => (
-                  <button
-                    key={id}
-                    onClick={() =>
-                      addElement({
-                        ...newElement('sticker', id),
-                        width: ['tape', 'date'].includes(id)
-                          ? 32
-                          : id === 'film' || id === 'polaroid'
-                            ? 55
-                            : 25,
-                        height: id === 'film' || id === 'polaroid' ? 45 : 16,
-                        style: {
-                          color: readableInk(
-                            page.background.color,
-                            themes[folio.theme].ink,
-                          ),
-                          fontSize: 32,
-                        },
-                      })
-                    }
-                  >
-                    <span>
-                      {id === 'film'
-                        ? '▣'
-                        : id === 'polaroid'
-                          ? '▤'
-                          : id === 'tape'
-                            ? '▰'
-                            : s.symbol}
-                    </span>
-                    <small>{s.name}</small>
-                  </button>
-                ))}
-            </div>
-          </TabsContent>
-          <TabsContent value="draw">
-            <div className="draw-modes">
-              {[
-                ['pen', 'ペン'],
-                ['marker', 'マーカー'],
-                ['eraser', '消しゴム'],
-                ['dotted', '点線'],
-              ].map(([id, name]) => (
-                <button
-                  className={drawing && draw.tool === id ? 'active' : ''}
-                  key={id}
-                  onClick={() => {
-                    setDrawing(true);
-                    setDraw({ ...draw, tool: id as DrawSettings['tool'] });
-                  }}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-            <label className="color-field">
-              インクの色
-              <input
-                type="color"
-                value={draw.color}
-                onChange={(e) => setDraw({ ...draw, color: e.target.value })}
-              />
-            </label>
-            <div className="swatches">
-              {[
-                '#f45d35',
-                '#2f3931',
-                '#fffefa',
-                '#718bd1',
-                '#e79abc',
-                '#a4be5d',
-                '#f5d94a',
-              ].map((c) => (
-                <button
-                  key={c}
-                  style={{ background: c }}
-                  aria-label={`ペンの色 ${c}`}
-                  onClick={() => setDraw({ ...draw, color: c })}
-                />
-              ))}
-            </div>
-            <Range
-              label="太さ"
-              value={draw.width}
-              min={1}
-              max={30}
-              onChange={(v) => setDraw({ ...draw, width: v })}
-            />
-            <div className="switch-line">
-              落書きを表示
-              <Switch
-                aria-label="落書きを表示"
-                checked={page.doodlesVisible}
-                onCheckedChange={(v) =>
-                  updatePage({ ...page, doodlesVisible: v })
-                }
-              />
-            </div>
-            <button
-              className="secondary full"
-              onClick={() => setDrawing(!drawing)}
-            >
-              <MousePointer2 size={18} />
-              {drawing ? '要素の調整に戻る' : 'ページに描く'}
-            </button>
-            <p className="help">
-              消しゴムは落書きだけを消します。上の矢印で元に戻す・やり直すができます。
-            </p>
-          </TabsContent>
-          <TabsContent value="design">
-            <div className="field-label">
-              冊子のテーマ
-              <Choice
-                label="テーマ"
-                value={folio.theme}
-                options={Object.entries(themes).map(([value, t]) => ({
-                  value,
-                  label: t.name,
-                }))}
-                onChange={(v) => {
-                  const theme = v as ThemeId;
-                  commit({
-                    ...folio,
-                    theme,
-                    paperType: themes[theme].paper,
-                    pages: folio.pages.map((p) => ({
-                      ...p,
-                      background: paper(themes[theme].paper),
-                      elements: p.elements.map((e) =>
-                        e.type === 'text'
-                          ? {
-                              ...e,
-                              style: {
-                                ...e.style,
-                                color: themes[theme].ink,
-                                fontFamily: themes[theme].font,
-                              },
-                            }
-                          : e,
-                      ),
-                    })),
-                  });
-                }}
-              />
-            </div>
-            <p className="help">
-              テーマ変更で全ページの紙と文字色を更新。写真の位置はそのままです。
-            </p>
-            <div className="field-label">
-              このページの紙
-              <Choice
-                label="紙の種類"
-                value={page.background.type}
-                options={Object.entries(paperNames).map(([value, label]) => ({
-                  value,
-                  label,
-                }))}
-                onChange={(v) => updatePaper(paper(v as PaperId))}
-              />
-            </div>
-            <label className="color-field">
-              紙の色
-              <input
-                type="color"
-                value={page.background.color}
-                onChange={(e) =>
-                  updatePaper({ ...page.background, color: e.target.value })
-                }
-              />
-            </label>
-            <Choice
-              label="線の種類"
-              value={page.background.lines}
-              options={[
-                { value: 'none', label: '線なし' },
-                { value: 'ruled', label: '横罫' },
-                { value: 'grid', label: '方眼' },
-                { value: 'dot', label: 'ドット' },
-              ]}
-              onChange={(v) =>
-                updatePage({
-                  ...page,
-                  background: {
-                    ...page.background,
-                    lines: v as Page['background']['lines'],
-                  },
-                })
-              }
-            />
-            <Range
-              label="線の濃さ"
-              value={page.background.opacity * 100}
-              onChange={(v) =>
-                updatePage({
-                  ...page,
-                  background: { ...page.background, opacity: v / 100 },
-                })
-              }
-            />
-            <Range
-              label="紙の質感"
-              value={page.background.texture * 100}
-              onChange={(v) =>
-                updatePage({
-                  ...page,
-                  background: { ...page.background, texture: v / 100 },
-                })
-              }
-            />
-            <div className="field-label">
-              冊子の形式
-              <Choice
-                label="冊子の形式"
-                value={folio.bookType}
-                options={[
-                  { value: 'book', label: '本型' },
-                  { value: 'binder', label: 'バインダー型' },
-                ]}
-                onChange={(v) =>
-                  commit({ ...folio, bookType: v as Folio['bookType'] })
-                }
-              />
-            </div>
-            <label className="field-label">
-              本棚のタイトル
-              <input
-                value={folio.title}
-                maxLength={80}
-                onChange={(e) => commit({ ...folio, title: e.target.value })}
-              />
-            </label>
-          </TabsContent>
-        </Tabs>
-        {el && !drawing && (
-          <section className="element-inspector">
-            <div className="inspector-heading">
-              <strong>
-                {el.type === 'photo'
-                  ? '写真を調整'
-                  : el.type === 'text'
-                    ? '文字を編集'
-                    : '装飾を調整'}
-              </strong>
-              <button
-                className="icon-button"
-                aria-label={el.locked ? 'ロック解除' : 'ロック'}
-                onClick={() => patchElement({ locked: !el.locked })}
-              >
-                {el.locked ? <Lock size={17} /> : <Unlock size={17} />}
-              </button>
-            </div>
-            {el.locked ? (
-              <p className="help">ロック中です。鍵を押すと調整できます。</p>
-            ) : (
+          <div className="sheet-grip" />
+          <SheetTitle>{titles[tool]}</SheetTitle>
+          <SheetDescription className="sr-only">
+            必要な道具を選んで、ページを自由に編集できます。
+          </SheetDescription>
+          <div className="sheet-body">
+            {tool === 'element' ? (
+              inspector
+            ) : tool === 'book' ? (
+              <BookSettings folio={folio} onChange={commit} />
+            ) : tool === 'pages' ? (
               <>
-                {el.type === 'text' && (
-                  <>
-                    <textarea
-                      aria-label="テキストの内容"
-                      rows={3}
-                      value={el.content}
-                      maxLength={500}
-                      onChange={(e) =>
-                        patchElement({ content: e.target.value })
-                      }
-                    />
-                    <Range
-                      label="文字サイズ"
-                      min={10}
-                      max={80}
-                      value={el.style.fontSize || 28}
-                      onChange={(v) =>
-                        patchElement({ style: { ...el.style, fontSize: v } })
-                      }
-                    />
-                    <label className="color-field">
-                      文字の色
-                      <input
-                        type="color"
-                        value={el.style.color || '#323b30'}
-                        onChange={(e) =>
-                          patchElement({
-                            style: { ...el.style, color: e.target.value },
-                          })
-                        }
-                      />
-                    </label>
-                  </>
-                )}
-                {el.type === 'photo' && (
-                  <Choice
-                    label="写真のフレーム"
-                    value={el.style.frame || 'none'}
-                    options={[
-                      { value: 'none', label: 'フレームなし' },
-                      { value: 'polaroid', label: 'ポラロイド' },
-                      { value: 'film', label: 'フィルム' },
-                    ]}
-                    onChange={(v) =>
-                      patchElement({ style: { ...el.style, frame: v } })
-                    }
-                  />
-                )}
-                <Range
-                  label="回転"
-                  min={-180}
-                  max={180}
-                  value={el.rotation}
-                  onChange={(v) => patchElement({ rotation: v })}
+                <PageRail
+                  folio={folio}
+                  index={index}
+                  onSelect={(i) => {
+                    setIndex(i);
+                    setSelected(undefined);
+                    setPanelOpen(false);
+                  }}
+                  onReorder={reorder}
+                  inSheet
                 />
-                <Range
-                  label="サイズ"
-                  min={6}
-                  max={Math.max(6, 100 - el.x)}
-                  value={el.width}
-                  onChange={(v) =>
-                    patchElement({
-                      width: v,
-                      height: Math.min(100 - el.y, (el.height * v) / el.width),
-                    })
-                  }
-                />
-                <div className="element-actions">
+                <div className="page-sheet-actions">
                   <button
-                    onClick={() =>
-                      patchElement({
-                        zIndex:
-                          Math.max(...page.elements.map((e) => e.zIndex)) + 1,
-                      })
-                    }
+                    className="secondary"
+                    disabled={folio.pageCount >= 15}
+                    onClick={addPage}
                   >
-                    <ArrowUp size={17} />
-                    前面
+                    <Plus size={17} />
+                    追加
                   </button>
                   <button
-                    onClick={() =>
-                      patchElement({
-                        zIndex:
-                          Math.min(...page.elements.map((e) => e.zIndex)) - 1,
-                      })
-                    }
-                  >
-                    <ArrowDown size={17} />
-                    背面
-                  </button>
-                  <button
-                    disabled={el.type === 'photo' && photoCount >= 5}
-                    onClick={() =>
-                      addElement({
-                        ...el,
-                        id: uid(),
-                        x: Math.min(100 - el.width, el.x + 3),
-                        y: Math.min(100 - el.height, el.y + 3),
-                      })
-                    }
-                  >
-                    <Copy size={17} />
-                    複製
-                  </button>
-                  <button
-                    onClick={() => {
-                      updatePage({
-                        ...page,
-                        elements: page.elements.filter((e) => e.id !== el.id),
-                      });
-                      setSelected(undefined);
-                    }}
+                    className="secondary"
+                    disabled={page.isCover}
+                    onClick={() => setConfirm(true)}
                   >
                     <Trash2 size={17} />
-                    削除
+                    このページを削除
                   </button>
                 </div>
+                <details className="fine-adjust">
+                  <summary>タイトル・本の形式</summary>
+                  <BookSettings folio={folio} onChange={commit} />
+                </details>
               </>
+            ) : (
+              <ToolContent
+                tool={tool}
+                folio={folio}
+                page={page}
+                photoCount={photoCount}
+                busy={busy}
+                onPhotos={() => input.current?.click()}
+                onAdd={addElement}
+                onPaper={updatePaper}
+                onTheme={changeTheme}
+                draw={draw}
+                onDraw={setDraw}
+                onDrawStart={() => {
+                  setDrawing(true);
+                  setSelected(undefined);
+                  setPanelOpen(false);
+                  if (!page.doodlesVisible)
+                    updatePage({ ...page, doodlesVisible: true });
+                }}
+                onPage={updatePage}
+                onClose={() => setPanelOpen(false)}
+              />
             )}
-          </section>
-        )}
-        <button className="preview-button" onClick={onView}>
-          <BookOpen size={18} />
-          本をめくってみる <span>↗</span>
-        </button>
-      </aside>
+          </div>
+          {['paper', 'theme', 'element', 'book'].includes(tool) && (
+            <button
+              className="primary full sheet-done"
+              onClick={() => setPanelOpen(false)}
+            >
+              <Check size={17} />
+              できた
+            </button>
+          )}
+        </SheetContent>
+      </Sheet>
       {confirm && (
         <Confirm
           title="このページを削除しますか？"
-          description="写真、文字、落書きを含むページを削除します。編集画面の「元に戻す」で復元できます。"
+          description="写真や落書きを含めて削除します。「元に戻す」で復元できます。"
           onClose={() => setConfirm(false)}
           onConfirm={() => {
             commit({
@@ -831,9 +756,78 @@ export function Editor({
             });
             setIndex(Math.max(0, index - 1));
             setSelected(undefined);
+            setPanelOpen(false);
           }}
         />
       )}
     </div>
+  );
+}
+function PageRail({
+  folio,
+  index,
+  onSelect,
+  onReorder,
+  inSheet = false,
+}: {
+  folio: Folio;
+  index: number;
+  onSelect: (i: number) => void;
+  onReorder: (from: number, to: number) => void;
+  inSheet?: boolean;
+}) {
+  return (
+    <nav
+      className={`page-miniatures ${inSheet ? 'in-sheet' : ''}`}
+      aria-label="ページ一覧"
+    >
+      {folio.pages.map((p, i) => (
+        <div key={p.id} className={index === i ? 'active' : ''}>
+          <button
+            className="miniature"
+            onClick={() => onSelect(i)}
+            draggable={i > 0}
+            onDragStart={(e) => {
+              e.dataTransfer.setData('text/plain', String(i));
+              e.dataTransfer.effectAllowed = 'move';
+            }}
+            onDragOver={(e) => {
+              if (i > 0) e.preventDefault();
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const from = Number(e.dataTransfer.getData('text/plain'));
+              if (
+                Number.isInteger(from) &&
+                from > 0 &&
+                from < folio.pages.length
+              )
+                onReorder(from, i);
+            }}
+          >
+            <PageCanvas page={p} thumb />
+            <span>{i === 0 ? 'Cover' : String(i).padStart(2, '0')}</span>
+          </button>
+          {inSheet && i > 0 && (
+            <div className="reorder-buttons">
+              <button
+                aria-label={`ページ${i}を前へ`}
+                disabled={i === 1}
+                onClick={() => onReorder(i, i - 1)}
+              >
+                <MoveUp size={14} />
+              </button>
+              <button
+                aria-label={`ページ${i}を後ろへ`}
+                disabled={i === folio.pages.length - 1}
+                onClick={() => onReorder(i, i + 1)}
+              >
+                <MoveDown size={14} />
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </nav>
   );
 }

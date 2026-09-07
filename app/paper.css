@@ -1,0 +1,235 @@
+.page-canvas {
+  aspect-ratio: 500/707;
+  width: 100%;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  container-type: inline-size;
+  user-select: none;
+  touch-action: pan-y;
+  text-align: left;
+}
+.page-canvas.editable {
+  touch-action: none;
+}
+.page-canvas.drawing {
+  cursor: crosshair;
+}
+.page-element {
+  position: absolute;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center;
+  min-width: 0;
+}
+.page-element.text {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.editable .page-element {
+  cursor: grab;
+}
+.editable .page-element:active {
+  cursor: grabbing;
+}
+.page-element.locked {
+  cursor: default;
+}
+.page-element img {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.page-element.photo {
+  background: #ffffff12;
+}
+.page-element.photo.polaroid {
+  padding: 2% 2% 6%;
+  background: #fff;
+  box-shadow: 1px 2px 5px #0002;
+}
+.page-element.photo.film {
+  padding: 2%;
+  border-left: 0.9cqw dashed #6d625a;
+  border-right: 0.9cqw dashed #6d625a;
+  background: #332f2a;
+}
+.page-element.selected {
+  outline: 1.5px solid var(--orange);
+  outline-offset: 2px;
+}
+.corner,
+.resize-handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: white;
+  border: 1.5px solid var(--orange);
+  border-radius: 1px;
+}
+.corner.tl {
+  left: -6px;
+  top: -6px;
+}
+.corner.tr {
+  right: -6px;
+  top: -6px;
+}
+.corner.bl {
+  left: -6px;
+  bottom: -6px;
+}
+.resize-handle {
+  bottom: -7px;
+  right: -7px;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  cursor: nwse-resize;
+  z-index: 2;
+}
+.resize-handle:after,
+.rotate-handle:after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+}
+.rotate-handle {
+  position: absolute;
+  top: -31px;
+  left: calc(50% - 11px);
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: white;
+  color: var(--orange);
+  border: 1px solid var(--orange);
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.rotate-handle:before {
+  content: '';
+  height: 9px;
+  width: 1px;
+  background: var(--orange);
+  position: absolute;
+  top: 23px;
+}
+.lock-indicator {
+  position: absolute;
+  right: -10px;
+  top: -10px;
+  background: var(--orange);
+  color: white;
+  border-radius: 4px;
+  padding: 4px;
+}
+.page-number {
+  position: absolute;
+  bottom: 3%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 2.3cqw;
+  letter-spacing: 0.15em;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.paper-texture {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.5' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+.doodle-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2147483640;
+}
+.sticker-tape {
+  background: repeating-linear-gradient(
+    90deg,
+    #c4d193ac 0 8%,
+    #e0e8bbbc 8% 16%
+  );
+  clip-path: polygon(2% 0, 100% 4%, 98% 95%, 0 100%);
+  opacity: 0.9;
+}
+.sticker-note {
+  background: #f7f0ac;
+  padding: 6%;
+  box-shadow: 1px 3px 5px #0002;
+  font-family: serif;
+  font-style: italic;
+  font-size: 4cqw !important;
+}
+.sticker-date {
+  background: #ffffffb3;
+  border: 1px solid currentColor;
+  letter-spacing: 0.1em;
+  font: 2.3cqw monospace !important;
+  white-space: nowrap;
+}
+.sticker-heart,
+.sticker-star {
+  color: #f36680 !important;
+  font-size: 13cqw !important;
+}
+.sticker-star {
+  color: #f2bd32 !important;
+}
+.sticker-seal {
+  border: 1px dashed currentColor;
+  border-radius: 50%;
+  font-size: 12cqw !important;
+}
+.sticker-circle {
+  font-size: 19cqw !important;
+}
+.sticker-film {
+  border: 2cqw dashed #222;
+  background: transparent;
+}
+.sticker-polaroid {
+  border: 2cqw solid white;
+  border-bottom: 9cqw solid white;
+  box-shadow: 0 2px 5px #0002;
+}
+.sticker-arrow {
+  font-size: 15cqw !important;
+}
+.cover-rings {
+  position: absolute;
+  left: -6%;
+  top: 14%;
+  bottom: 14%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 13%;
+}
+.cover-rings i,
+.binder-rings i {
+  height: 12px;
+  border: 3px solid #a6aaa7;
+  border-radius: 10px;
+  box-shadow:
+    0 2px 2px #0006,
+    inset 0 1px 2px white;
+  background: linear-gradient(#e6e9e8, #8c9391, #f9fafa);
+  display: block;
+}
+.image-missing {
+  font-size: 3cqw;
+  opacity: 0.6;
+  padding: 5%;
+}

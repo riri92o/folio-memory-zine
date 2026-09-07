@@ -51,14 +51,22 @@ export type DrawSettings = {
   color: string;
   width: number;
 };
-function Doodles({ strokes, draft }: { strokes: Stroke[]; draft?: Stroke }) {
+function Doodles({
+  strokes,
+  draft,
+  thumb = false,
+}: {
+  strokes: Stroke[];
+  draft?: Stroke;
+  thumb?: boolean;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const c = ref.current!,
       ctx = c.getContext('2d')!;
     ctx.clearRect(0, 0, c.width, c.height);
     ctx.save();
-    ctx.scale(2, 2);
+    ctx.scale(thumb ? 1 : 2, thumb ? 1 : 2);
     for (const s of [...strokes, ...(draft ? [draft] : [])]) {
       if (!s.points.length) continue;
       ctx.globalCompositeOperation =
@@ -77,9 +85,14 @@ function Doodles({ strokes, draft }: { strokes: Stroke[]; draft?: Stroke }) {
       ctx.stroke();
     }
     ctx.restore();
-  }, [strokes, draft]);
+  }, [strokes, draft, thumb]);
   return (
-    <canvas className="doodle-layer" width={1000} height={1414} ref={ref} />
+    <canvas
+      className="doodle-layer"
+      width={thumb ? 500 : 1000}
+      height={thumb ? 707 : 1414}
+      ref={ref}
+    />
   );
 }
 export function PageCanvas({
@@ -182,7 +195,7 @@ export function PageCanvas({
       return;
     }
     const el = g.el!;
-    const next = { ...el };
+    const next = { ...el, style: { ...el.style, auto: false } };
     if (g.kind === 'move') {
       next.x = Math.max(0, Math.min(100 - el.width, el.x + dx));
       next.y = Math.max(0, Math.min(100 - el.height, el.y + dy));
@@ -254,6 +267,9 @@ export function PageCanvas({
             fontSize: `${(el.style.fontSize || 26) / 5}cqw`,
             fontFamily: el.style.fontFamily,
             fontWeight: el.style.fontWeight || 400,
+            background: el.style.background,
+            fontStyle: el.style.italic ? 'italic' : undefined,
+            letterSpacing: el.style.letterSpacing,
           };
           return (
             <div
@@ -282,13 +298,14 @@ export function PageCanvas({
                 <span>{el.content}</span>
               ) : (
                 <span>
-                  {el.content === 'date'
-                    ? new Date(
-                        page.layoutSeed > 1e12
-                          ? page.layoutSeed
-                          : 1788739200000,
-                      ).toLocaleDateString('en-CA')
-                    : stickers[el.content]?.symbol || el.content}
+                  {el.style.label ||
+                    (el.content === 'date'
+                      ? new Date(
+                          page.layoutSeed > 1e12
+                            ? page.layoutSeed
+                            : 1788739200000,
+                        ).toLocaleDateString('en-CA')
+                      : stickers[el.content]?.symbol || el.content)}
                 </span>
               )}
               {selected === el.id && editable && !draw && (
@@ -321,7 +338,9 @@ export function PageCanvas({
             </div>
           );
         })}
-      {page.doodlesVisible && <Doodles strokes={page.doodles} draft={stroke} />}
+      {(page.doodlesVisible || !!draw) && (
+        <Doodles strokes={page.doodles} draft={stroke} thumb={thumb} />
+      )}
       {!page.isCover && (
         <div className="page-number">
           {String(page.pageNumber).padStart(2, '0')}

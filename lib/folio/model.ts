@@ -46,6 +46,11 @@ export interface Element {
     frame?: string;
     auto?: boolean;
     fit?: 'contain' | 'cover';
+    role?: 'title' | 'subtitle' | 'caption';
+    background?: string;
+    label?: string;
+    italic?: boolean;
+    letterSpacing?: number;
   };
 }
 export interface Stroke {
@@ -105,7 +110,7 @@ export const themes: Record<
   minimal: {
     name: 'ミニマル・モダン',
     en: 'MINIMAL',
-    color: '#edf0e9',
+    color: '#e7efff',
     paper: 'white',
     ink: '#222b26',
     rotation: 0,
@@ -115,12 +120,12 @@ export const themes: Record<
   scrap: {
     name: 'スクラップブック',
     en: 'SCRAPBOOK',
-    color: '#e2ecc6',
-    paper: 'cream',
-    ink: '#3b4635',
+    color: '#dceafb',
+    paper: 'white',
+    ink: '#233557',
     rotation: 7,
     decor: 'tape',
-    font: 'serif',
+    font: '"Snell Roundhand", "Yomogi", "Segoe Print", cursive',
   },
   y2k: {
     name: 'レトロ・Y2K',
@@ -221,6 +226,9 @@ export function paper(type: PaperId): Paper {
   };
 }
 export const stickers: Record<string, { name: string; symbol: string }> = {
+  ticket: { name: 'チケット', symbol: 'GOOD TIMES' },
+  location: { name: '場所ラベル', symbol: '⌖ MY PLACE' },
+  day: { name: 'DAY ラベル', symbol: 'DAY 01' },
   tape: { name: 'マステ', symbol: ' ' },
   seal: { name: 'シール', symbol: '✿' },
   note: { name: '付箋', symbol: 'remember' },
@@ -282,6 +290,7 @@ export function newFolio(
       width: 80,
       height: 22,
       style: {
+        role: 'title',
         fontSize: 44,
         fontWeight: 700,
         color: readableInk(paper(paperType).color, themes[theme].ink),
@@ -296,6 +305,7 @@ export function newFolio(
             y: 78,
             height: 10,
             style: {
+              role: 'subtitle' as const,
               fontSize: 17,
               color: readableInk(paper(paperType).color, themes[theme].ink),
             },
