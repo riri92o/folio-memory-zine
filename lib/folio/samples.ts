@@ -76,7 +76,7 @@ export function samples(): Folio[] {
           fontFamily:
             i === 1
               ? 'Arial, sans-serif'
-              : '"Snell Roundhand", "Yomogi", "Segoe Print", cursive',
+              : '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif',
           fontSize: i === 1 ? 62 : 64,
           fontWeight: i === 1 ? 900 : 500,
         };

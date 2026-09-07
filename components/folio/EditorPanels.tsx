@@ -124,7 +124,7 @@ export function ElementPanel({
                       ...el.style,
                       fontFamily:
                         v === 'hand'
-                          ? '"Snell Roundhand", "Yomogi", "Segoe Print", cursive'
+                          ? '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif'
                           : v === 'serif'
                             ? 'serif'
                             : 'Arial, sans-serif',
@@ -460,12 +460,17 @@ export function ToolContent({
         {[
           {
             name: 'ひとこと、添えて。',
-            font: '"Snell Roundhand", "Yomogi", "Segoe Print", cursive',
+            font: '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif',
             size: 35,
             weight: 400,
           },
           { name: 'DAY 01', font: 'Arial, sans-serif', size: 60, weight: 900 },
-          { name: 'あの日のこと。', font: 'serif', size: 25, weight: 400 },
+          {
+            name: 'あの日のこと。',
+            font: '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif',
+            size: 25,
+            weight: 400,
+          },
         ].map((item) => (
           <button
             style={{ fontFamily: item.font, fontWeight: item.weight }}

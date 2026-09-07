@@ -36,8 +36,7 @@
   --line: #e8ebf2;
   --muted: #8991a2;
   --font-sans: Arial, 'Hiragino Kaku Gothic ProN', 'Noto Sans', sans-serif;
-  --font-hand:
-    'Snell Roundhand', 'Yomogi', 'Segoe Print', 'Bradley Hand', cursive;
+  --font-hand: 'Yomogi', 'Hiragino Kaku Gothic ProN', sans-serif;
 }
 * {
   box-sizing: border-box;
@@ -87,18 +86,15 @@ button:hover:not(:disabled) {
   filter: brightness(0.98);
 }
 .wordmark {
-  font:
-    italic 52px/0.95 Georgia,
-    'Times New Roman',
-    serif;
-  letter-spacing: -4px;
+  font: 750 36px/1 var(--font-sans);
+  letter-spacing: -0.07em;
   color: #151b2e;
   display: inline-block;
 }
 .handwritten {
   font-family: var(--font-hand);
   font-weight: 400;
-  font-style: italic;
+  font-style: normal;
 }
 .primary,
 .secondary {
@@ -345,7 +341,7 @@ button:hover:not(:disabled) {
 .new-book > div {
   aspect-ratio: 500/707;
   border: 1.5px dashed #cfdcf1;
-  background: linear-gradient(155deg, #f9fcff, #f3f7ff 50%, #fff9fe);
+  background: #f7f9fc;
   border-radius: 5px;
   display: flex;
   align-items: center;
@@ -526,10 +522,17 @@ button:hover:not(:disabled) {
   background: var(--blue);
 }
 /* Photo-first creation, with one decision per screen. */
-.creation-flow {
+[data-slot='dialog-content'].creation-flow {
   position: fixed !important;
   inset: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
   transform: none !important;
+  translate: none !important;
+  scale: none !important;
+  margin: 0 !important;
   max-width: none !important;
   width: 100% !important;
   height: 100dvh !important;
@@ -539,8 +542,7 @@ button:hover:not(:disabled) {
   gap: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  background:
-    radial-gradient(ellipse at 8% 40%, #f9f4ff66, transparent 45%), #fff !important;
+  background: #fff !important;
   overflow: hidden;
   box-shadow: none !important;
   ring: 0 !important;
@@ -2457,7 +2459,7 @@ textarea {
 }
 .view-read .app-header {
   border-bottom: 0;
-  background: #fafbfe;
+  background: #f6f7f9;
 }
 .reader {
   flex: 1;
@@ -2465,9 +2467,7 @@ textarea {
   display: flex;
   flex-direction: column;
   padding: 0 30px 25px;
-  background:
-    radial-gradient(ellipse at 12% 12%, #edf4ff66, transparent 45%),
-    radial-gradient(ellipse at 92% 88%, #fcf1fa88, transparent 50%), #fafbfe;
+  background: #f6f7f9;
   overflow: hidden;
 }
 .reading-title {
@@ -2670,11 +2670,12 @@ textarea {
   inset: 0;
   backface-visibility: hidden;
   overflow: hidden;
-  background: #fafbfd;
+  background: #fff;
   transform-style: preserve-3d;
 }
 .curl-back {
   transform: rotateY(180deg);
+  filter: saturate(0.94) brightness(0.985);
 }
 .curl-content {
   height: 100%;
@@ -2690,7 +2691,13 @@ textarea {
 .curl-light {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, #11243e99, #283f5b55);
+  background: linear-gradient(
+    90deg,
+    #14243f99 0%,
+    #ffffff0d 34%,
+    #17294770 72%,
+    #ffffff45 100%
+  );
   pointer-events: none;
   mix-blend-mode: multiply;
 }
@@ -2708,6 +2715,18 @@ textarea {
   transform-origin: center;
   pointer-events: none;
   z-index: 4;
+}
+.curl-page.returning-page {
+  filter: drop-shadow(-8px 5px 8px #1c2b4033);
+}
+.curl-page.forward-page {
+  filter: drop-shadow(8px 5px 8px #1c2b4033);
+}
+.physical-book.binder .curl-page {
+  z-index: 6;
+}
+.physical-book.binder > .binder-binding {
+  z-index: 7;
 }
 .physical-book.binder .curl-page {
   top: 8px;

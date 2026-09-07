@@ -125,7 +125,7 @@ export const themes: Record<
     ink: '#233557',
     rotation: 7,
     decor: 'tape',
-    font: '"Snell Roundhand", "Yomogi", "Segoe Print", cursive',
+    font: '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif',
   },
   y2k: {
     name: 'レトロ・Y2K',
@@ -155,7 +155,7 @@ export const themes: Record<
     ink: '#86566e',
     rotation: 4,
     decor: 'heart',
-    font: 'serif',
+    font: 'Arial, "Hiragino Kaku Gothic ProN", sans-serif',
   },
   zine: {
     name: 'マガジン・ZINE',
@@ -185,7 +185,7 @@ export const themes: Record<
     ink: '#3b524c',
     rotation: 2,
     decor: 'seal',
-    font: 'serif',
+    font: '"Hiragino Mincho ProN", "Yu Mincho", serif',
   },
 };
 export const paperNames: Record<PaperId, string> = {

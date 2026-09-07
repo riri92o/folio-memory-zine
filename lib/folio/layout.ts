@@ -281,7 +281,7 @@ export function generateLayout(
           fontSize: bold ? 42 : 26,
           fontWeight: bold ? 900 : 400,
           fontFamily: loose
-            ? '"Snell Roundhand", "Yomogi", "Segoe Print", cursive'
+            ? '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif'
             : t.font,
           background: fullBleed ? '#ffffffeb' : undefined,
           color: fullBleed ? '#14264b' : ink,

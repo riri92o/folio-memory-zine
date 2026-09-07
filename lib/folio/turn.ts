@@ -24,3 +24,14 @@ export function turnGeometry(
   }
   return result;
 }
+
+/**
+ * A previous page is a leaf returning from the left, rather than the current
+ * leaf being turned forwards again. Its resting geometry therefore runs from
+ * fully folded (outside the page) back to flat.
+ */
+export function turnMotion(progress: number, direction: number) {
+  return direction < 0
+    ? { geometryProgress: 1 - progress, geometryDirection: 1 }
+    : { geometryProgress: progress, geometryDirection: 1 };
+}

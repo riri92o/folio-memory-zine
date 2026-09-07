@@ -168,8 +168,8 @@
   background: #f7f0ac;
   padding: 6%;
   box-shadow: 1px 3px 5px #0002;
-  font-family: serif;
-  font-style: italic;
+  font-family: var(--font-sans);
+  font-style: normal;
   font-size: 4cqw !important;
 }
 .sticker-date {

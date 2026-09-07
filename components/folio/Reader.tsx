@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { type Folio, type Page, paper } from '@/lib/folio/model';
 import { PageCanvas } from './PageCanvas';
 import { useWide } from './useWide';
-import { turnGeometry } from '@/lib/folio/turn';
+import { turnGeometry, turnMotion } from '@/lib/folio/turn';
 const blank: Page = {
   id: 'endpaper',
   folioId: 'reader',
@@ -19,7 +19,7 @@ const blank: Page = {
 const TurningFace = memo(function TurningFace({ page }: { page: Page }) {
   return <PageCanvas page={page} thumb />;
 });
-const strips = 7;
+const strips = 9;
 // Piecewise cylindrical bend. Adjacent segments share endpoints, so the page
 // remains a continuous surface through the turn; both faces stay visible.
 function CurledPage({
@@ -37,10 +37,11 @@ function CurledPage({
   width: number;
   wide: boolean;
 }) {
+  const motion = turnMotion(progress, direction);
   const pieces = [];
   for (const { index: j, angle, left, z, origin } of turnGeometry(
-    progress,
-    direction,
+    motion.geometryProgress,
+    motion.geometryDirection,
     width,
     strips,
   )) {
@@ -91,7 +92,7 @@ function CurledPage({
   return (
     <div
       aria-hidden
-      className={`curl-page ${wide && direction > 0 ? 'from-right' : ''}`}
+      className={`curl-page ${wide ? 'from-right' : ''} ${direction < 0 ? 'returning-page' : 'forward-page'}`}
     >
       {pieces}
     </div>
@@ -186,7 +187,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
   let left = folio.pages[baseIndex],
     right = folio.pages[baseIndex + 1] || blank;
   if (turn) {
-    if (!wide) left = folio.pages[turn.to];
+    if (!wide) left = folio.pages[turn.direction > 0 ? turn.to : turn.from];
     else if (turn.direction > 0) right = folio.pages[turn.to + 1] || blank;
     else left = folio.pages[turn.to];
   }
@@ -194,15 +195,11 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
     ? folio.pages[
         turn.direction > 0
           ? Math.min(turn.from + step - 1, folio.pages.length - 1)
-          : turn.from
+          : Math.min(turn.to + step - 1, folio.pages.length - 1)
       ]
     : blank;
   const back = turn
-    ? folio.pages[
-        turn.direction > 0
-          ? turn.to
-          : Math.min(turn.to + step - 1, folio.pages.length - 1)
-      ]
+    ? folio.pages[turn.direction > 0 ? turn.to : turn.from]
     : blank;
   return (
     <main className="reader">
@@ -296,7 +293,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
                 className="cast-page-shadow"
                 style={{
                   opacity: Math.sin(turn.progress * Math.PI) * 0.2,
-                  transform: `scaleX(${0.3 + Math.sin(turn.progress * Math.PI) * 0.7})`,
+                  transform: `translateX(${turn.direction < 0 ? -16 + turn.progress * 16 : 0}%) scaleX(${0.25 + Math.sin(turn.progress * Math.PI) * 0.75})`,
                 }}
               />
               <CurledPage

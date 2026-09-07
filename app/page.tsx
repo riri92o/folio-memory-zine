@@ -234,7 +234,7 @@ export default function Home() {
               </p>
             </div>
             <span className="handwritten shelf-note">
-              Made of little moments <span>↙</span>
+              思い出を一冊ずつ <span>↙</span>
             </span>
           </div>
           {!ready ? (
@@ -280,7 +280,9 @@ export default function Home() {
                 </p>
               )}
               <div className="shelf-footer">
-                <span className="handwritten">Keep the days you love.</span>
+                <span className="handwritten">
+                  写真から、あなただけの一冊を。
+                </span>
                 <p>
                   写真も思い出も、このデバイスの中に。
                   <br />

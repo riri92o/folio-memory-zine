@@ -148,17 +148,17 @@ export function CreateDialog({
           <div className="flow-heading">
             <DialogTitle>
               {step === 0
-                ? 'どの瞬間を、残そう。'
+                ? '写真を選ぶ'
                 : step === 1
-                  ? 'あなたの写真に、ぴったりの気分。'
-                  : 'もう、あなたらしい一ページ。'}
+                  ? '雰囲気を選ぶ'
+                  : 'ページができました'}
             </DialogTitle>
             <DialogDescription>
               {step === 0
-                ? 'まずは、お気に入りの写真を1〜5枚。'
+                ? 'お気に入りの写真を1〜5枚選んでください。'
                 : step === 1
-                  ? '同じ写真も、雰囲気を変えると新しい表情に。'
-                  : 'このままでも、ここから自由に崩しても。'}
+                  ? '写真に合うデザインを、プレビューから選べます。'
+                  : '別の配置を試すか、そのまま自由に編集できます。'}
             </DialogDescription>
           </div>
           {step === 0 && (
@@ -214,7 +214,9 @@ export function CreateDialog({
                   <small>1〜5枚 · 写真は端末の中に保存</small>
                 </button>
               )}
-              <p className="handwritten flow-handnote">More than photos.</p>
+              <p className="handwritten flow-handnote">
+                好きな写真から、はじめよう。
+              </p>
             </div>
           )}
           {step === 1 && draft && (

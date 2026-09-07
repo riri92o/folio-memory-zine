@@ -265,7 +265,9 @@ export function PageCanvas({
             zIndex: el.zIndex,
             color: el.style.color,
             fontSize: `${(el.style.fontSize || 26) / 5}cqw`,
-            fontFamily: el.style.fontFamily,
+            fontFamily: el.style.fontFamily?.includes('Snell Roundhand')
+              ? '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif'
+              : el.style.fontFamily,
             fontWeight: el.style.fontWeight || 400,
             background: el.style.background,
             fontStyle: el.style.italic ? 'italic' : undefined,

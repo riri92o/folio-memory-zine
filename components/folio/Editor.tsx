@@ -342,13 +342,13 @@ export function Editor({
     ? [Math.floor(index / 2) * 2, Math.floor(index / 2) * 2 + 1]
     : [index];
   const titles: Record<string, string> = {
-    photos: '写真を、もう一枚。',
-    text: '言葉を添える。',
-    stickers: '小さな、ひと工夫。',
-    draw: 'そのまま、描いてみよう。',
-    paper: 'このページに似合う紙。',
-    theme: '気分を変えてみる。',
-    pages: '一冊の、ながれ。',
+    photos: '写真を追加',
+    text: '文字を追加',
+    stickers: 'ステッカーを追加',
+    draw: 'ページに描く',
+    paper: '紙を変更',
+    theme: 'テーマを変更',
+    pages: 'ページ一覧',
     book: 'このFolioについて',
     element: '自分らしく調整。',
   };
@@ -362,7 +362,7 @@ export function Editor({
     />
   ) : (
     <div className="inspector-empty">
-      <span className="handwritten">Make it yours.</span>
+      <span className="handwritten">自由に調整できます</span>
       <span className="empty-selection-icon">
         <Settings2 size={25} />
       </span>

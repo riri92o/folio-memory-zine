@@ -79,7 +79,7 @@ try {
           );
         tested++;
       }
-  const { turnGeometry } = await import(
+  const { turnGeometry, turnMotion } = await import(
     pathToFileURL(path.join(directory, 'turn.mjs'))
   );
   for (const direction of [-1, 1])
@@ -113,6 +113,21 @@ try {
           'page edge lifts toward the reader',
         );
     }
+  assert.deepEqual(
+    turnMotion(0, -1),
+    { geometryProgress: 1, geometryDirection: 1 },
+    'a previous page begins folded on the left',
+  );
+  assert.deepEqual(
+    turnMotion(1, -1),
+    { geometryProgress: 0, geometryDirection: 1 },
+    'a previous page returns flat over the current page',
+  );
+  assert.deepEqual(
+    turnMotion(0.4, 1),
+    { geometryProgress: 0.4, geometryDirection: 1 },
+    'a next page continues to turn forwards',
+  );
   const heroIds = new Set(),
     structures = new Set();
   const three = model.newPage('variation', 1, 'white');
