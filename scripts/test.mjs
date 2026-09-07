@@ -128,6 +128,11 @@ try {
     { geometryProgress: 0.4, geometryDirection: 1 },
     'a next page continues to turn forwards',
   );
+  const earlyCurl = turnGeometry(0.18, 1, 350, 12);
+  assert.ok(
+    Math.abs(earlyCurl.at(-1).angle) > Math.abs(earlyCurl[0].angle) + 0.1,
+    'the free right edge lifts before the hinged spine',
+  );
   assert.equal(readerDestination(0, 1, 8), 1, 'cover opens to page one');
   assert.equal(readerDestination(1, 1, 8), 3, 'interior advances by a spread');
   assert.equal(readerDestination(3, -1, 8), 1, 'spread returns by two pages');

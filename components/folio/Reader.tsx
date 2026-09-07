@@ -30,40 +30,7 @@ function BinderHoles({ edge }: { edge: 'left' | 'right' }) {
   );
 }
 
-/** A cover is a single stiff, two-sided leaf hinged to the spine. */
-function CoverLeaf({
-  cover,
-  firstPage,
-  openProgress,
-  binder,
-}: {
-  cover: Page;
-  firstPage: Page;
-  openProgress: number;
-  binder: boolean;
-}) {
-  return (
-    <div
-      className="cover-leaf"
-      aria-hidden
-      style={{ transform: `rotateY(${-180 * openProgress}deg)` }}
-    >
-      <div className="cover-face cover-front">
-        <TurningFace page={cover} />
-        {binder && <BinderHoles edge="left" />}
-      </div>
-      <div className="cover-face cover-back">
-        <TurningFace page={firstPage} />
-        {binder && <BinderHoles edge="right" />}
-      </div>
-      <div
-        className="cover-fold-shadow"
-        style={{ opacity: Math.sin(openProgress * Math.PI) * 0.38 }}
-      />
-    </div>
-  );
-}
-const strips = 9;
+const strips = 12;
 // Piecewise cylindrical bend. Adjacent segments share endpoints, so the page
 // remains a continuous surface through the turn; both faces stay visible.
 function CurledPage({
@@ -217,10 +184,10 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
       from = initial.progress,
       duration = matchMedia('(prefers-reduced-motion: reduce)').matches
         ? 1
-        : Math.max(220, 680 * Math.abs(target - from));
+        : Math.max(180, 420 * Math.abs(target - from));
     function tick(now: number) {
       const t = Math.min(1, (now - start) / duration),
-        eased = t * t * (3 - 2 * t);
+        eased = 1 - Math.pow(1 - t, 3);
       frame({ ...initial, progress: from + (target - from) * eased });
       if (t < 1) raf.current = requestAnimationFrame(tick);
       else {
@@ -389,6 +356,15 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
           )}
           {turn && (
             <>
+              {coverTransition && (
+                <div
+                  className="next-page-shadow"
+                  style={{
+                    opacity:
+                      Math.sin(coverTransition.openProgress * Math.PI) * 0.24,
+                  }}
+                />
+              )}
               <div
                 className="cast-page-shadow"
                 style={{
@@ -396,24 +372,15 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
                   transform: `translateX(${turn.direction < 0 ? -16 + turn.progress * 16 : 0}%) scaleX(${0.25 + Math.sin(turn.progress * Math.PI) * 0.75})`,
                 }}
               />
-              {coverTransition ? (
-                <CoverLeaf
-                  cover={folio.pages[0]}
-                  firstPage={folio.pages[1] || blank}
-                  openProgress={coverTransition.openProgress}
-                  binder={folio.bookType === 'binder'}
-                />
-              ) : (
-                <CurledPage
-                  front={front}
-                  back={back}
-                  progress={turn.progress}
-                  direction={turn.direction}
-                  width={pageWidth}
-                  wide
-                  binder={folio.bookType === 'binder'}
-                />
-              )}
+              <CurledPage
+                front={front}
+                back={back}
+                progress={turn.progress}
+                direction={turn.direction}
+                width={pageWidth}
+                wide
+                binder={folio.bookType === 'binder'}
+              />
             </>
           )}
           <div className="paper-stack" />

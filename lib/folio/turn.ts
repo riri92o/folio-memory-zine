@@ -8,10 +8,13 @@ export function turnGeometry(
   const result = [];
   let x = direction > 0 ? 0 : 1,
     z = 0;
-  const bend = Math.sin(progress * Math.PI) * 0.7;
   for (let i = 0; i < count; i++) {
     const index = direction > 0 ? i : count - 1 - i,
-      angle = direction * (-Math.PI * progress + bend * (i / (count - 1)));
+      edge = i / (count - 1),
+      local = Math.max(0, Math.min(1, (progress - (1 - edge) * 0.22) / 0.78)),
+      eased = local * local * (3 - 2 * local),
+      curl = Math.sin(local * Math.PI) * (0.08 + edge * 0.2),
+      angle = direction * (-Math.PI * eased - curl);
     result.push({
       index,
       angle,
