@@ -254,16 +254,6 @@ export default function Home() {
                     onDelete={() => setRemove(f)}
                   />
                 ))}
-                {!books.length &&
-                  examples.map((f, i) => (
-                    <BookCard
-                      key={f.id}
-                      folio={f}
-                      index={i}
-                      onRead={() => read(f)}
-                      onEdit={() => edit(f)}
-                    />
-                  ))}
                 <button className="new-book" onClick={() => setCreate(true)}>
                   <div>
                     <span className="new-book-plus">
@@ -276,11 +266,26 @@ export default function Home() {
                   <span>写真を選んで、はじめよう</span>
                 </button>
               </div>
-              {!books.length && (
-                <p className="sample-note">
-                  サンプルの冊子です。開いて、めくって、自由にアレンジしてみてください。
-                </p>
-              )}
+              <section className="sample-shelf">
+                <div className="sample-shelf-heading">
+                  <div>
+                    <h2>Sample Folios</h2>
+                    <p>開いて、めくって、好きな一冊をコピーできます。</p>
+                  </div>
+                  <span>{String(examples.length).padStart(2, '0')}</span>
+                </div>
+                <div className="book-grid sample-grid">
+                  {examples.map((f, i) => (
+                    <BookCard
+                      key={f.id}
+                      folio={f}
+                      index={i}
+                      onRead={() => read(f)}
+                      onEdit={() => edit(f)}
+                    />
+                  ))}
+                </div>
+              </section>
               <div className="shelf-footer">
                 <p>
                   写真も思い出も、このデバイスの中に。

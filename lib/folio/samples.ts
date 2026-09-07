@@ -26,6 +26,30 @@ export function samples(): Folio[] {
       img: 'cafe',
       type: 'binder' as const,
     },
+    {
+      title: 'Night drive',
+      heading: 'NIGHT\nDRIVE',
+      sub: 'CITY LIGHTS / 22:40',
+      theme: 'cinema' as const,
+      img: 'city',
+      type: 'binder' as const,
+    },
+    {
+      title: 'Weekend notes',
+      heading: 'WEEKEND\nNOTES',
+      sub: 'COFFEE, MUSIC, SUNDAY',
+      theme: 'minimal' as const,
+      img: 'cafe',
+      type: 'book' as const,
+    },
+    {
+      title: 'Blue horizon',
+      heading: 'BLUE\nHORIZON',
+      sub: 'SUMMER FILM / 2026',
+      theme: 'film' as const,
+      img: 'coast',
+      type: 'binder' as const,
+    },
   ].map((s, i) => {
     const f = newFolio(s.title, s.sub, s.type, s.theme, 'white');
     f.sample = true;
@@ -54,36 +78,42 @@ export function samples(): Folio[] {
       });
       if (j === 0) {
         const photo = next.elements.find((e) => e.type === 'photo')!;
-        photo.x = i === 2 ? 10 : 0;
-        photo.y = i === 2 ? 34 : 0;
-        photo.width = i === 2 ? 80 : 100;
-        photo.height = i === 2 ? 53 : 100;
-        photo.rotation = i === 2 ? -5 : 0;
+        const inset = i === 2 || i === 4;
+        photo.x = inset ? 10 : 0;
+        photo.y = inset ? 34 : 0;
+        photo.width = inset ? 80 : 100;
+        photo.height = inset ? 53 : 100;
+        photo.rotation = i === 2 ? -5 : i === 4 ? 2 : 0;
         photo.style = {
           ...photo.style,
           fit: 'cover',
-          frame: i === 2 ? 'polaroid' : 'none',
+          frame: inset ? 'polaroid' : 'none',
         };
         const title = next.elements.find((e) => e.style.role === 'title')!;
         title.x = i === 1 ? 9 : 12;
-        title.y = i === 1 ? 51 : 10;
+        title.y = i === 1 ? 51 : i === 3 ? 62 : 10;
         title.width = i === 1 ? 69 : 80;
         title.height = 25;
         title.style = {
           ...title.style,
-          color: i === 0 ? '#ffffff' : '#172447',
-          background: i === 1 ? '#fffffff0' : undefined,
+          color: [0, 3, 5].includes(i) ? '#ffffff' : '#172447',
+          background: i === 1 || i === 4 ? '#fffffff0' : undefined,
           fontFamily:
-            i === 1
+            i === 1 || i === 3
               ? 'Arial, sans-serif'
-              : '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif',
-          fontSize: i === 1 ? 62 : 64,
-          fontWeight: i === 1 ? 900 : 500,
+              : i === 5
+                ? '"Courier New", monospace'
+                : '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif',
+          fontSize: i === 1 || i === 3 ? 62 : 64,
+          fontWeight: i === 1 || i === 3 || i === 5 ? 900 : 500,
         };
         next.elements = next.elements.filter(
-          (e) => e.type !== 'sticker' || e.content === 'tape',
+          (e) =>
+            e.type !== 'sticker' ||
+            ['tape', 'date', 'ticket'].includes(e.content),
         );
         if (i === 2) next.background.color = '#ffeef6';
+        if (i === 4) next.background.color = '#f8fbff';
       }
       return next;
     });

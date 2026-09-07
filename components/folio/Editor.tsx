@@ -639,6 +639,7 @@ export function Editor({
           ['draw', PenLine, 'ペン'],
           ['paper', Palette, '紙'],
           ['theme', Sparkles, 'テーマ'],
+          ['book', BookOpen, '冊子'],
         ].map(([id, Icon, label]) => {
           const I = Icon as typeof ImagePlus;
           return (

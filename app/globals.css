@@ -389,6 +389,40 @@ button:hover:not(:disabled) {
   line-height: 1.8;
   margin: 40px 0 0;
 }
+.sample-shelf {
+  margin-top: 82px;
+  padding-top: 35px;
+  border-top: 1px solid #edf1f6;
+}
+.sample-shelf-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 36px;
+}
+.sample-shelf-heading h2 {
+  margin: 0 0 9px;
+  color: #34405b;
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.4px;
+}
+.sample-shelf-heading p {
+  margin: 0;
+  color: #949eae;
+  font-size: 11px;
+}
+.sample-shelf-heading > span {
+  color: #a6b3c5;
+  font: 11px monospace;
+}
+.sample-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 30px 22px;
+}
+.sample-grid .book-details {
+  margin-top: 19px;
+}
 .shelf-footer {
   margin: 76px 0 10px;
   padding-top: 26px;
@@ -883,12 +917,54 @@ button:hover:not(:disabled) {
   width: 100%;
   -webkit-overflow-scrolling: touch;
 }
-.theme-step > .theme-carousel {
+.theme-and-binding {
+  width: 100%;
+  max-width: 620px;
+  min-width: 0;
+}
+.theme-and-binding > .theme-carousel {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  max-width: 620px;
   overflow: visible;
   gap: 19px !important;
+}
+.create-binding {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 5px 9px 0;
+  padding: 15px 17px;
+  border-radius: 15px;
+  background: #f7f9fd;
+}
+.create-binding > strong {
+  color: #647691;
+  font-size: 12px;
+  font-weight: 600;
+}
+.create-binding > div {
+  display: flex;
+  gap: 7px;
+}
+.create-binding button {
+  min-width: 112px;
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #e0e7f2;
+  border-radius: 11px;
+  background: white;
+  color: #8898af;
+  font-size: 11px;
+}
+.create-binding button.active {
+  border-color: #79aaf0;
+  background: #edf5ff;
+  color: #3174d5;
+  box-shadow: 0 3px 10px #3174d512;
 }
 .theme-option {
   cursor: pointer;
@@ -1097,7 +1173,7 @@ textarea {
   .theme-step {
     gap: 30px;
   }
-  .theme-step > .theme-carousel {
+  .theme-and-binding > .theme-carousel {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px !important;
   }
@@ -1167,6 +1243,26 @@ textarea {
   .book-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 33px 24px;
+  }
+  .sample-shelf {
+    margin-top: 56px;
+    padding-top: 28px;
+  }
+  .sample-shelf-heading {
+    margin-bottom: 28px;
+    align-items: center;
+  }
+  .sample-shelf-heading h2 {
+    font-size: 18px;
+  }
+  .sample-shelf-heading p {
+    max-width: 230px;
+    line-height: 1.7;
+    font-size: 10px;
+  }
+  .sample-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 34px 24px;
   }
   .book-cover-button {
     padding-right: 5px;
@@ -1344,12 +1440,29 @@ textarea {
     margin: auto;
     padding-bottom: 22px;
   }
-  .theme-step > .theme-carousel {
+  .theme-and-binding > .theme-carousel {
     display: flex !important;
     overflow-x: auto;
     gap: 13px !important;
     padding: 18px 22px 14px !important;
     margin-top: 4px;
+  }
+  .create-binding {
+    display: block;
+    margin: 2px 22px 8px;
+    padding: 12px;
+  }
+  .create-binding > strong {
+    display: block;
+    margin: 0 0 9px 2px;
+  }
+  .create-binding > div {
+    width: 100%;
+  }
+  .create-binding button {
+    min-width: 0;
+    flex: 1;
+    min-height: 40px;
   }
   .theme-step .theme-option {
     width: 101px;
@@ -2413,7 +2526,7 @@ textarea {
     min-height: 79px;
   }
   .creative-dock > button {
-    width: calc((100vw - 30px) /6);
+    width: calc((100vw - 30px) /7);
     height: 59px;
     gap: 9px;
     border-radius: 13px;
@@ -2575,10 +2688,27 @@ textarea {
     margin: 0;
     gap: 15px;
   }
-  .theme-step > .theme-carousel {
+  .theme-and-binding {
+    display: flex;
+    max-width: 72%;
+    align-items: center;
+  }
+  .theme-and-binding > .theme-carousel {
     display: flex !important;
-    max-width: 68%;
+    max-width: 65%;
     overflow: auto;
+  }
+  .create-binding {
+    min-width: 210px;
+    margin: 0;
+    padding: 8px;
+  }
+  .create-binding > strong {
+    display: none;
+  }
+  .create-binding button {
+    min-width: 0;
+    width: 95px;
   }
   .photo-invitation {
     min-height: 210px;

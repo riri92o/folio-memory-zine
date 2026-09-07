@@ -10,6 +10,8 @@ import {
   Pencil,
   Check,
   LoaderCircle,
+  BookOpen,
+  NotebookPen,
 } from 'lucide-react';
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import {
@@ -35,6 +37,7 @@ export function CreateDialog({
   const [step, setStep] = useState(0),
     [photos, setPhotos] = useState<Photo[]>([]),
     [theme, setTheme] = useState<ThemeId>('scrap'),
+    [bookType, setBookType] = useState<Folio['bookType']>('book'),
     [draft, setDraft] = useState<Folio>(),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
@@ -59,14 +62,14 @@ export function CreateDialog({
       if (input.current) input.current.value = '';
     }
   }
-  function compose(t = theme, existing = draft) {
+  function compose(t = theme, existing = draft, binding = bookType) {
     const seed = Date.now();
     const f =
       (existing ? structuredClone(existing) : undefined) ||
       newFolio(
         'My little moments',
         new Date(seed).toLocaleDateString('en-CA').replaceAll('-', '.'),
-        'book',
+        binding,
         t,
         themes[t].paper,
       );
@@ -87,6 +90,7 @@ export function CreateDialog({
     }
     const next = normalize({
       ...f,
+      bookType: binding,
       theme: t,
       paperType: themes[t].paper,
       pages: f.pages.map((p, i) =>
@@ -226,14 +230,42 @@ export function CreateDialog({
                     YOUR PHOTOS, {themes[theme].en} MOOD.
                   </span>
                 </div>
-                <ThemePicker
-                  value={theme}
-                  onChange={(t) => {
-                    setTheme(t);
-                    compose(t);
-                  }}
-                  page={draft.pages[1]}
-                />
+                <div className="theme-and-binding">
+                  <ThemePicker
+                    value={theme}
+                    onChange={(t) => {
+                      setTheme(t);
+                      compose(t);
+                    }}
+                    page={draft.pages[1]}
+                  />
+                  <div className="create-binding" aria-label="冊子の形式">
+                    <strong>とじ方を選ぶ</strong>
+                    <div>
+                      {[
+                        ['book', '本型', BookOpen],
+                        ['binder', 'バインダー', NotebookPen],
+                      ].map(([id, label, Icon]) => {
+                        const I = Icon as typeof BookOpen;
+                        return (
+                          <button
+                            key={id as string}
+                            className={bookType === id ? 'active' : ''}
+                            aria-pressed={bookType === id}
+                            onClick={() => {
+                              const binding = id as Folio['bookType'];
+                              setBookType(binding);
+                              compose(theme, draft, binding);
+                            }}
+                          >
+                            <I size={20} />
+                            <span>{label as string}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
             {step === 2 && draft && (
