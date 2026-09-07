@@ -2873,6 +2873,43 @@ textarea {
 .physical-book.spread > .curl-page.from-right {
   left: 50%;
 }
+.cover-leaf {
+  position: absolute;
+  inset: 0 0 0 50%;
+  z-index: 6;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  will-change: transform;
+  pointer-events: none;
+  filter: drop-shadow(7px 7px 9px #182b4730);
+}
+.cover-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  background: white;
+  border-radius: 2px;
+}
+.cover-face > .page-canvas {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.cover-back {
+  transform: rotateY(180deg);
+  filter: saturate(0.97) brightness(0.99);
+}
+.cover-fold-shadow {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 18%;
+  z-index: 3;
+  background: linear-gradient(90deg, #10213c80, transparent);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
 .curl-strip {
   position: absolute;
   top: 0;
@@ -2975,6 +3012,12 @@ textarea {
 .physical-book.binder.spread .curl-page.from-right {
   left: calc(50% + 4px);
 }
+.physical-book.binder .cover-leaf {
+  top: 8px;
+  bottom: 8px;
+  left: calc(50% + 4px);
+  right: 8px;
+}
 @media (max-width: 700px) {
   .reader {
     padding: 0 22px 24px;
@@ -3045,6 +3088,12 @@ textarea {
   }
   .physical-book.binder.spread .curl-page.from-right {
     left: calc(50% + 3px);
+  }
+  .physical-book.binder .cover-leaf {
+    top: 6px;
+    bottom: 6px;
+    left: calc(50% + 3px);
+    right: 6px;
   }
 }
 @media (max-height: 520px) and (orientation: landscape) {

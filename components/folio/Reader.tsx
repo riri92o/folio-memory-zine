@@ -29,6 +29,40 @@ function BinderHoles({ edge }: { edge: 'left' | 'right' }) {
     </div>
   );
 }
+
+/** A cover is a single stiff, two-sided leaf hinged to the spine. */
+function CoverLeaf({
+  cover,
+  firstPage,
+  openProgress,
+  binder,
+}: {
+  cover: Page;
+  firstPage: Page;
+  openProgress: number;
+  binder: boolean;
+}) {
+  return (
+    <div
+      className="cover-leaf"
+      aria-hidden
+      style={{ transform: `rotateY(${-180 * openProgress}deg)` }}
+    >
+      <div className="cover-face cover-front">
+        <TurningFace page={cover} />
+        {binder && <BinderHoles edge="left" />}
+      </div>
+      <div className="cover-face cover-back">
+        <TurningFace page={firstPage} />
+        {binder && <BinderHoles edge="right" />}
+      </div>
+      <div
+        className="cover-fold-shadow"
+        style={{ opacity: Math.sin(openProgress * Math.PI) * 0.38 }}
+      />
+    </div>
+  );
+}
 const strips = 9;
 // Piecewise cylindrical bend. Adjacent segments share endpoints, so the page
 // remains a continuous surface through the turn; both faces stay visible.
@@ -362,15 +396,24 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
                   transform: `translateX(${turn.direction < 0 ? -16 + turn.progress * 16 : 0}%) scaleX(${0.25 + Math.sin(turn.progress * Math.PI) * 0.75})`,
                 }}
               />
-              <CurledPage
-                front={front}
-                back={back}
-                progress={turn.progress}
-                direction={turn.direction}
-                width={pageWidth}
-                wide
-                binder={folio.bookType === 'binder'}
-              />
+              {coverTransition ? (
+                <CoverLeaf
+                  cover={folio.pages[0]}
+                  firstPage={folio.pages[1] || blank}
+                  openProgress={coverTransition.openProgress}
+                  binder={folio.bookType === 'binder'}
+                />
+              ) : (
+                <CurledPage
+                  front={front}
+                  back={back}
+                  progress={turn.progress}
+                  direction={turn.direction}
+                  width={pageWidth}
+                  wide
+                  binder={folio.bookType === 'binder'}
+                />
+              )}
             </>
           )}
           <div className="paper-stack" />
