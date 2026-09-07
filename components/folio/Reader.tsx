@@ -19,6 +19,16 @@ const blank: Page = {
 const TurningFace = memo(function TurningFace({ page }: { page: Page }) {
   return <PageCanvas page={page} thumb />;
 });
+function BinderHoles({ edge }: { edge: 'left' | 'right' }) {
+  return (
+    <div className={`binder-page-holes edge-${edge}`} aria-hidden>
+      <i />
+      <i />
+      <i />
+      <i />
+    </div>
+  );
+}
 const strips = 9;
 // Piecewise cylindrical bend. Adjacent segments share endpoints, so the page
 // remains a continuous surface through the turn; both faces stay visible.
@@ -275,6 +285,9 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
         >
           <div className="read-leaf">
             <PageCanvas page={left} />
+            {folio.bookType === 'binder' && !wide && (
+              <BinderHoles edge="left" />
+            )}
           </div>
           {wide && (
             <div className="read-leaf">
@@ -286,6 +299,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
               ) : (
                 <PageCanvas page={right} />
               )}
+              {folio.bookType === 'binder' && <BinderHoles edge="left" />}
             </div>
           )}
           {folio.bookType === 'book' && wide && <div className="book-gutter" />}

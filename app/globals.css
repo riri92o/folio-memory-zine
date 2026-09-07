@@ -1628,10 +1628,10 @@ textarea {
 .binder-binding {
   pointer-events: none;
   position: absolute;
-  left: 12px;
+  left: 6px;
   top: 15%;
   bottom: 15%;
-  width: 32px;
+  width: 24px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1642,38 +1642,24 @@ textarea {
   left: 50%;
 }
 .binder-binding i {
-  height: 12px;
-  border: 2px solid #8c98a8;
-  background: linear-gradient(
-    #fcfdff 0%,
-    #b8c2d1 30%,
-    #f6f9ff 48%,
-    #8492a5 80%
-  );
-  border-radius: 50%;
-  box-shadow:
-    0 3px 3px #152f4c4a,
-    inset 0 1px 0 white;
+  width: 24px;
+  height: 10px;
   position: relative;
+  display: block;
 }
-.binder-binding i:before,
-.binder-binding i:after {
+.binder-binding i:before {
   content: '';
   position: absolute;
-  top: 1px;
-  left: -4px;
-  width: 6px;
-  height: 7px;
-  background: #536074;
-  border-radius: 50%;
-  z-index: -1;
+  top: -7px;
+  left: 12px;
+  width: 10px;
+  height: 12px;
+  border-top: 3px solid #8c98a8;
+  border-right: 3px solid #8c98a8;
+  border-radius: 0 12px 0 0;
   box-shadow:
-    0 0 0 2px #f0f2f6,
-    1px 1px 2px #293443;
-}
-.binder-binding i:after {
-  left: auto;
-  right: -4px;
+    inset -1px 1px 0 #ffffffb8,
+    2px -1px 2px #2632413d;
 }
 .empty-page-action {
   position: absolute;
@@ -2699,34 +2685,40 @@ textarea {
     2px 3px 0 #b4bfce,
     3px 4px 0 #f9fbff;
 }
-.physical-book.binder .read-leaf:before {
-  content: '';
+.binder-page-holes {
   position: absolute;
-  top: 14%;
-  bottom: 14%;
-  left: 4px;
+  top: 15%;
+  bottom: 15%;
   width: 10px;
   z-index: 4;
-  background: radial-gradient(
-    circle at center,
-    #687482 0 2px,
-    #eef1f4 2.5px 4px,
-    transparent 4.5px
-  );
-  background-size: 10px 25%;
-  background-repeat: repeat-y;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   pointer-events: none;
 }
-.physical-book.binder.wide .read-leaf:first-child:before {
-  right: 4px;
-  left: auto;
+.binder-page-holes.edge-left {
+  left: 5px;
+}
+.binder-page-holes.edge-right {
+  right: 5px;
+}
+.binder-page-holes i,
+.turn-punches i {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  background: #66717e;
+  box-shadow:
+    inset 0 1px 2px #1f293599,
+    0 0 0 2px #f4f5f7;
 }
 .physical-book.binder .paper-stack {
   display: none;
 }
 .physical-book.binder > .binder-binding {
-  left: 18px;
-  width: 37px;
+  left: 8px;
+  width: 24px;
 }
 .physical-book.binder.wide > .binder-binding {
   left: 50%;
@@ -2793,25 +2785,16 @@ textarea {
 }
 .turn-punches {
   position: absolute;
-  top: 12%;
-  bottom: 12%;
+  top: 15%;
+  bottom: 15%;
   left: 5px;
-  width: 11px;
+  width: 10px;
   z-index: 4;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   transform: translateZ(2px);
   pointer-events: none;
-}
-.turn-punches i {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #818b98;
-  box-shadow:
-    inset 0 1px 2px #27303b99,
-    0 0 0 2px #f7f8fa;
 }
 .curl-front,
 .curl-back {
@@ -2877,26 +2860,11 @@ textarea {
 .physical-book.binder > .binder-binding {
   z-index: 7;
 }
-.physical-book.binder .binder-binding i {
-  border-width: 3px;
-  border-color: #7c8795;
-  background: linear-gradient(
-    180deg,
-    #ffffff,
-    #9ba5b2 46%,
-    #f8fafc 56%,
-    #687482
-  );
+.physical-book.binder .binder-binding i:before {
+  border-color: #717c89;
   box-shadow:
-    0 4px 5px #17223155,
-    inset 0 1px 1px #fff;
-}
-.physical-book.binder .binder-binding i:before,
-.physical-book.binder .binder-binding i:after {
-  background: #5d6875;
-  box-shadow:
-    0 0 0 2px #727d89,
-    1px 1px 2px #18212c66;
+    inset -1px 1px 0 #fff,
+    2px -1px 3px #18233052;
 }
 .physical-book.binder .curl-page {
   top: 8px;
@@ -2963,8 +2931,11 @@ textarea {
     gap: 6px;
   }
   .physical-book.binder > .binder-binding {
-    left: 15px;
-    width: 30px;
+    left: 6px;
+    width: 24px;
+  }
+  .physical-book.binder.wide > .binder-binding {
+    left: 50%;
   }
   .physical-book.binder .curl-page {
     top: 6px;

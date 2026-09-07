@@ -219,14 +219,36 @@
 }
 .cover-rings i,
 .binder-rings i {
-  height: 12px;
-  border: 3px solid #a6aaa7;
-  border-radius: 10px;
-  box-shadow:
-    0 2px 2px #0006,
-    inset 0 1px 2px white;
-  background: linear-gradient(#e6e9e8, #8c9391, #f9fafa);
+  height: 14px;
+  border: 0;
+  background: none;
   display: block;
+  position: relative;
+}
+.cover-rings i:before,
+.binder-rings i:before {
+  content: '';
+  position: absolute;
+  right: 8%;
+  top: 0;
+  width: 45%;
+  height: 75%;
+  border-top: 3px solid #8a9299;
+  border-right: 3px solid #8a9299;
+  border-radius: 0 12px 0 0;
+  box-shadow: inset -1px 1px 0 #fff;
+}
+.cover-rings i:after,
+.binder-rings i:after {
+  content: '';
+  position: absolute;
+  right: 4%;
+  bottom: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #68727c;
+  box-shadow: 0 0 0 2px #f5f6f7;
 }
 .image-missing {
   font-size: 3cqw;
