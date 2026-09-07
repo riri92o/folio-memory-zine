@@ -113,7 +113,7 @@ function CurledPage({
   return (
     <div
       aria-hidden
-      className={`curl-page ${wide && direction > 0 ? 'from-right' : ''} ${direction < 0 ? 'returning-page' : 'forward-page'}`}
+      className={`curl-page ${wide ? 'from-right' : ''} ${direction < 0 ? 'returning-page' : 'forward-page'}`}
     >
       {pieces}
     </div>
