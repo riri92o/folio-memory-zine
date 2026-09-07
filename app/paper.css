@@ -30,6 +30,19 @@
   align-items: flex-start;
   justify-content: flex-start;
 }
+.page-element.sticker {
+  container-type: size;
+}
+.page-element.sticker > span {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: min(72cqi, 72cqb) !important;
+  line-height: 1;
+  white-space: nowrap;
+}
 .editable .page-element {
   cursor: grab;
 }
@@ -170,19 +183,26 @@
   box-shadow: 1px 3px 5px #0002;
   font-family: var(--font-sans);
   font-style: normal;
-  font-size: 4cqw !important;
 }
 .sticker-date {
   background: #ffffffb3;
   border: 1px solid currentColor;
   letter-spacing: 0.1em;
-  font: 2.3cqw monospace !important;
+  font-family: monospace !important;
   white-space: nowrap;
+}
+.sticker-note > span,
+.sticker-date > span,
+.sticker-location > span,
+.sticker-ticket > span,
+.sticker-day > span,
+.sticker-wave > span {
+  font-size: min(20cqi, 58cqb) !important;
+  letter-spacing: 0.08em;
 }
 .sticker-heart,
 .sticker-star {
   color: #f36680 !important;
-  font-size: 13cqw !important;
 }
 .sticker-star {
   color: #f2bd32 !important;
@@ -190,22 +210,43 @@
 .sticker-seal {
   border: 1px dashed currentColor;
   border-radius: 50%;
-  font-size: 12cqw !important;
-}
-.sticker-circle {
-  font-size: 19cqw !important;
 }
 .sticker-film {
-  border: 2cqw dashed #222;
   background: transparent;
 }
+.sticker-film > span {
+  border: 4cqi dashed #222;
+}
 .sticker-polaroid {
-  border: 2cqw solid white;
-  border-bottom: 9cqw solid white;
+  background: transparent;
+}
+.sticker-polaroid > span {
+  border: 4cqi solid white;
+  border-bottom-width: 18cqb;
   box-shadow: 0 2px 5px #0002;
 }
-.sticker-arrow {
-  font-size: 15cqw !important;
+.sticker-sparkle,
+.sticker-cloud,
+.sticker-butterfly {
+  color: #7ca7ec !important;
+}
+.sticker-flower,
+.sticker-bow,
+.sticker-cherry {
+  color: #f08fb7 !important;
+}
+.sticker-lightning,
+.sticker-sun {
+  color: #f3c249 !important;
+}
+.sticker-smile,
+.sticker-check,
+.sticker-camera,
+.sticker-pin {
+  color: #496eae !important;
+}
+.sticker-music {
+  color: #8069c4 !important;
 }
 .cover-rings {
   position: absolute;

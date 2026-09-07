@@ -35,3 +35,17 @@ export function turnMotion(progress: number, direction: number) {
     ? { geometryProgress: 1 - progress, geometryDirection: 1 }
     : { geometryProgress: progress, geometryDirection: 1 };
 }
+
+/** Cover is a single leaf; every interior position advances as a spread. */
+export function readerDestination(
+  index: number,
+  direction: number,
+  pageCount: number,
+) {
+  if (direction > 0) {
+    const next = index === 0 ? 1 : index + 2;
+    return next < pageCount ? next : null;
+  }
+  if (index === 0) return null;
+  return index <= 1 ? 0 : Math.max(1, index - 2);
+}

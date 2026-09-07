@@ -1923,6 +1923,49 @@ textarea {
   outline: 2px solid #76adff;
   outline-offset: 2px;
 }
+.font-choices {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px !important;
+  margin: 17px 0;
+}
+.font-choices > label {
+  min-height: 66px;
+  padding: 8px 5px;
+  border: 1px solid #e7ecf4;
+  border-radius: 12px;
+  background: #fbfcfe;
+  color: #637590;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.font-choices > label b {
+  font-size: 19px;
+  line-height: 1;
+}
+.font-choices > label span {
+  font:
+    10px/1.2 Arial,
+    sans-serif;
+}
+.font-choices [data-slot='radio-group-item'] {
+  position: absolute;
+  opacity: 0;
+}
+.font-choices > label.active {
+  border-color: #82aff0;
+  background: #eef5ff;
+  color: #2868c5;
+  box-shadow: 0 3px 9px #3872bd16;
+}
+.font-choices > label:has(:focus-visible) {
+  outline: 2px solid #76adff;
+  outline-offset: 2px;
+}
 .element-panel .inspector-heading {
   display: flex;
   align-items: center;
@@ -2590,20 +2633,45 @@ textarea {
   perspective: 1800px;
   position: relative;
 }
+.reading-stage:after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 5%;
+  width: min(75vw, 830px);
+  height: 30px;
+  border-radius: 50%;
+  background: #263d6240;
+  filter: blur(17px);
+  transform: translateX(-50%) scaleY(0.55);
+  pointer-events: none;
+  z-index: 0;
+}
 .physical-book {
   display: flex;
   position: relative;
   width: min(85%, calc((100dvh - 235px) /1.414));
   isolation: isolate;
   touch-action: pan-y;
-  box-shadow: 0 8px 20px #233d6020;
+  box-shadow:
+    0 18px 28px #233d602b,
+    0 35px 65px #1f365527;
   perspective: 1700px;
   perspective-origin: center;
   transform-style: preserve-3d;
   border-radius: 3px;
+  z-index: 1;
+  transform: translateY(-9px) rotateX(1.2deg);
+  transition:
+    width 480ms cubic-bezier(0.2, 0.75, 0.2, 1),
+    transform 480ms ease,
+    box-shadow 480ms ease;
 }
 .physical-book.wide {
   width: min(80vw, calc((100dvh - 235px) *1.414), 1000px);
+  box-shadow:
+    0 22px 34px #233d6030,
+    0 45px 78px #1f36552b;
 }
 .read-leaf {
   flex: 1;

@@ -295,33 +295,59 @@ export function generateLayout(
       decorCount =
         theme === 'minimal' ? 0 : 1 + Math.floor(rnd() * (loose ? 3 : 2));
     const choices =
-      theme === 'y2k'
-        ? ['star', 'heart', 'ticket']
-        : theme === 'film'
-          ? ['date', 'tape']
-          : theme === 'cinema'
-            ? ['date']
-            : theme === 'classic'
-              ? ['seal', 'date']
-              : theme === 'zine'
-                ? ['day', 'arrow']
-                : ['tape', 'location', 'star', 'arrow'];
+      theme === 'minimal'
+        ? ['date', 'circle', 'check']
+        : theme === 'y2k'
+          ? [
+              'star',
+              'heart',
+              'ticket',
+              'sparkle',
+              'smile',
+              'music',
+              'butterfly',
+            ]
+          : theme === 'film'
+            ? ['date', 'tape', 'camera', 'ticket']
+            : theme === 'pastel'
+              ? ['heart', 'flower', 'cloud', 'bow', 'sparkle', 'cherry']
+              : theme === 'cinema'
+                ? ['date', 'ticket', 'camera', 'star']
+                : theme === 'classic'
+                  ? ['seal', 'date', 'ticket', 'note', 'flower']
+                  : theme === 'zine'
+                    ? ['day', 'arrow', 'circle', 'lightning', 'check', 'wave']
+                    : [
+                        'tape',
+                        'location',
+                        'star',
+                        'arrow',
+                        'flower',
+                        'camera',
+                        'pin',
+                        'sun',
+                      ];
+    const used = new Set<string>();
     for (let i = 0; i < decorCount; i++) {
-      const kind = i === 0 && loose ? 'tape' : pick(choices);
+      const available = choices.filter((choice) => !used.has(choice));
+      const kind = i === 0 && loose ? 'tape' : pick(available);
+      used.add(kind);
       let x = margin + rnd() * 62,
-        y = 83 + rnd() * 6;
+        y = i % 2 ? 8 + rnd() * 70 : 80 + rnd() * 9;
       const w =
           kind === 'tape'
             ? 22
-            : kind === 'location' || kind === 'ticket' || kind === 'date'
+            : ['location', 'ticket', 'date', 'day', 'wave'].includes(kind)
               ? 31
-              : 14,
+              : 12 + rnd() * 7,
         h =
           kind === 'tape'
             ? 5
-            : kind === 'location' || kind === 'ticket' || kind === 'date'
+            : ['location', 'ticket', 'date', 'day', 'wave'].includes(kind)
               ? 6
-              : 10;
+              : 9 + rnd() * 5;
+      x = Math.min(100 - w - margin / 2, x);
+      y = Math.min(96 - h, y);
       if (i === 0 && kind === 'tape') {
         x = Math.min(72, main.x + main.width * 0.32);
         y = Math.max(2, main.y - 2);

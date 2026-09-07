@@ -3,8 +3,7 @@ import { useEffect, useRef, useState, memo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { type Folio, type Page, paper } from '@/lib/folio/model';
 import { PageCanvas } from './PageCanvas';
-import { useWide } from './useWide';
-import { turnGeometry, turnMotion } from '@/lib/folio/turn';
+import { readerDestination, turnGeometry, turnMotion } from '@/lib/folio/turn';
 const blank: Page = {
   id: 'endpaper',
   folioId: 'reader',
@@ -119,8 +118,7 @@ function CurledPage({
   );
 }
 export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
-  const wide = useWide(),
-    [index, setIndex] = useState(0),
+  const [index, setIndex] = useState(0),
     [turn, setTurn] = useState<{
       from: number;
       to: number;
@@ -141,8 +139,10 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
       | undefined
     >(undefined),
     live = useRef<typeof turn>(undefined);
-  const step = wide ? 2 : 1,
-    baseIndex = Math.min(index, folio.pages.length - 1);
+  const baseIndex = Math.min(index, folio.pages.length - 1),
+    wide = baseIndex > 0,
+    previousIndex = readerDestination(baseIndex, -1, folio.pages.length),
+    nextIndex = readerDestination(baseIndex, 1, folio.pages.length);
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
@@ -180,8 +180,8 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
     raf.current = requestAnimationFrame(tick);
   }
   function begin(direction: number) {
-    const to = baseIndex + direction * step;
-    if (to < 0 || to >= folio.pages.length) return false;
+    const to = readerDestination(baseIndex, direction, folio.pages.length);
+    if (to === null) return false;
     frame({ from: baseIndex, to, direction, progress: 0 });
     return true;
   }
@@ -214,8 +214,14 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
   const front = turn
     ? folio.pages[
         turn.direction > 0
-          ? Math.min(turn.from + step - 1, folio.pages.length - 1)
-          : Math.min(turn.to + step - 1, folio.pages.length - 1)
+          ? Math.min(
+              turn.from + Math.abs(turn.to - turn.from) - 1,
+              folio.pages.length - 1,
+            )
+          : Math.min(
+              turn.to + Math.abs(turn.to - turn.from) - 1,
+              folio.pages.length - 1,
+            )
       ]
     : blank;
   const back = turn
@@ -231,7 +237,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
         <button
           className="reader-arrow prev"
           aria-label="前のページ"
-          disabled={baseIndex === 0 || !!turn}
+          disabled={previousIndex === null || !!turn}
           onClick={() => flip(-1)}
         >
           <ChevronLeft size={21} />
@@ -336,7 +342,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
         <button
           className="reader-arrow next"
           aria-label="次のページ"
-          disabled={baseIndex + step >= folio.pages.length || !!turn}
+          disabled={nextIndex === null || !!turn}
           onClick={() => flip(1)}
         >
           <ChevronRight size={21} />

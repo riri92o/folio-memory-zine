@@ -239,6 +239,20 @@ export const stickers: Record<string, { name: string; symbol: string }> = {
   circle: { name: '丸囲み', symbol: '◯' },
   film: { name: 'フィルム枠', symbol: '' },
   polaroid: { name: 'ポラロイド', symbol: '' },
+  sparkle: { name: 'きらきら', symbol: '✧' },
+  smile: { name: 'スマイル', symbol: '☺' },
+  flower: { name: '花', symbol: '❀' },
+  lightning: { name: '稲妻', symbol: 'ϟ' },
+  cloud: { name: '雲', symbol: '☁' },
+  music: { name: '音符', symbol: '♪' },
+  camera: { name: 'カメラ', symbol: '▣' },
+  pin: { name: 'ピン', symbol: '⌖' },
+  check: { name: 'チェック', symbol: '✓' },
+  wave: { name: '波線', symbol: '～～' },
+  butterfly: { name: 'ちょうちょ', symbol: 'ʚɞ' },
+  sun: { name: '太陽', symbol: '☼' },
+  bow: { name: 'リボン', symbol: '୨୧' },
+  cherry: { name: 'チェリー', symbol: '●●' },
 };
 export function newElement(type: Element['type'], content = ''): Element {
   return {

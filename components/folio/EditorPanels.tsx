@@ -30,6 +30,49 @@ import {
   type Paper,
   type ThemeId,
 } from '@/lib/folio/model';
+
+const fontChoices = [
+  {
+    value: 'gothic',
+    label: 'ゴシック',
+    family: 'Arial, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif',
+  },
+  {
+    value: 'rounded',
+    label: '丸ゴシック',
+    family: '"Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif',
+  },
+  {
+    value: 'mincho',
+    label: '明朝',
+    family: '"Hiragino Mincho ProN", "Yu Mincho", serif',
+  },
+  {
+    value: 'hand',
+    label: '手書き',
+    family: '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif',
+  },
+  {
+    value: 'mono',
+    label: 'モノ',
+    family: '"Courier New", "Osaka-Mono", monospace',
+  },
+  {
+    value: 'display',
+    label: '太字',
+    family: '"Arial Black", Impact, "Hiragino Kaku Gothic ProN", sans-serif',
+  },
+] as const;
+
+function currentFont(family = '') {
+  if (family.includes('Yomogi')) return 'hand';
+  if (family.includes('Maru')) return 'rounded';
+  if (family.includes('Mincho') || family === 'serif') return 'mincho';
+  if (family.includes('Courier') || family.includes('mono')) return 'mono';
+  if (family.includes('Arial Black') || family.includes('Impact'))
+    return 'display';
+  return 'gothic';
+}
 export function Segments({
   label,
   value,
@@ -104,34 +147,36 @@ export function ElementPanel({
                 maxLength={500}
                 onChange={(e) => onPatch({ content: e.target.value })}
               />
-              <Segments
-                label="文字の雰囲気"
-                value={
-                  el.style.fontFamily?.includes('cursive')
-                    ? 'hand'
-                    : el.style.fontFamily === 'serif'
-                      ? 'serif'
-                      : 'sans'
-                }
-                items={[
-                  { value: 'sans', label: 'Aa' },
-                  { value: 'serif', label: 'Serif' },
-                  { value: 'hand', label: '手書き' },
-                ]}
-                onChange={(v) =>
-                  onPatch({
-                    style: {
-                      ...el.style,
-                      fontFamily:
-                        v === 'hand'
-                          ? '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif'
-                          : v === 'serif'
-                            ? 'serif'
-                            : 'Arial, sans-serif',
-                    },
-                  })
-                }
-              />
+              <RadioGroup
+                className="font-choices"
+                aria-label="文字の雰囲気"
+                value={currentFont(el.style.fontFamily)}
+                onValueChange={(value) => {
+                  const choice = fontChoices.find(
+                    (font) => font.value === value,
+                  );
+                  if (choice)
+                    onPatch({
+                      style: { ...el.style, fontFamily: choice.family },
+                    });
+                }}
+              >
+                {fontChoices.map((font) => (
+                  <label
+                    key={font.value}
+                    className={
+                      currentFont(el.style.fontFamily) === font.value
+                        ? 'active'
+                        : ''
+                    }
+                    style={{ fontFamily: font.family }}
+                  >
+                    <RadioGroupItem value={font.value} />
+                    <b>Aa</b>
+                    <span>{font.label}</span>
+                  </label>
+                ))}
+              </RadioGroup>
               <Range
                 label="文字の大きさ"
                 value={el.style.fontSize || 28}
@@ -467,9 +512,27 @@ export function ToolContent({
           { name: 'DAY 01', font: 'Arial, sans-serif', size: 60, weight: 900 },
           {
             name: 'あの日のこと。',
-            font: '"Yomogi", "Hiragino Kaku Gothic ProN", sans-serif',
+            font: '"Hiragino Mincho ProN", "Yu Mincho", serif',
             size: 25,
             weight: 400,
+          },
+          {
+            name: 'やさしい記憶',
+            font: '"Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif',
+            size: 28,
+            weight: 600,
+          },
+          {
+            name: 'PHOTO / 2026',
+            font: '"Courier New", "Osaka-Mono", monospace',
+            size: 24,
+            weight: 700,
+          },
+          {
+            name: 'MEMORIES',
+            font: '"Arial Black", Impact, sans-serif',
+            size: 46,
+            weight: 900,
           },
         ].map((item) => (
           <button
@@ -505,14 +568,30 @@ export function ToolContent({
             onClick={() => {
               onAdd({
                 ...newElement('sticker', id),
-                width: ['ticket', 'location', 'date', 'tape'].includes(id)
+                width: [
+                  'ticket',
+                  'location',
+                  'date',
+                  'day',
+                  'note',
+                  'tape',
+                  'wave',
+                ].includes(id)
                   ? 31
                   : ['film', 'polaroid'].includes(id)
                     ? 55
                     : 22,
                 height: ['film', 'polaroid'].includes(id)
                   ? 45
-                  : ['ticket', 'location', 'date', 'tape'].includes(id)
+                  : [
+                        'ticket',
+                        'location',
+                        'date',
+                        'day',
+                        'note',
+                        'tape',
+                        'wave',
+                      ].includes(id)
                     ? 8
                     : 16,
                 style: {

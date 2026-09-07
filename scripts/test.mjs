@@ -79,7 +79,7 @@ try {
           );
         tested++;
       }
-  const { turnGeometry, turnMotion } = await import(
+  const { turnGeometry, turnMotion, readerDestination } = await import(
     pathToFileURL(path.join(directory, 'turn.mjs'))
   );
   for (const direction of [-1, 1])
@@ -128,6 +128,11 @@ try {
     { geometryProgress: 0.4, geometryDirection: 1 },
     'a next page continues to turn forwards',
   );
+  assert.equal(readerDestination(0, 1, 8), 1, 'cover opens to page one');
+  assert.equal(readerDestination(1, 1, 8), 3, 'interior advances by a spread');
+  assert.equal(readerDestination(3, -1, 8), 1, 'spread returns by two pages');
+  assert.equal(readerDestination(1, -1, 8), 0, 'first spread closes to cover');
+  assert.equal(readerDestination(7, 1, 8), null, 'last spread cannot advance');
   const heroIds = new Set(),
     structures = new Set();
   const three = model.newPage('variation', 1, 'white');
