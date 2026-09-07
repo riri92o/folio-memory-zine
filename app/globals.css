@@ -2663,12 +2663,13 @@ textarea {
   z-index: 1;
   transform: translateY(-9px) rotateX(1.2deg);
   transition:
-    width 480ms cubic-bezier(0.2, 0.75, 0.2, 1),
-    transform 480ms ease,
-    box-shadow 480ms ease;
+    width 650ms cubic-bezier(0.2, 0.75, 0.2, 1),
+    transform 650ms ease,
+    box-shadow 650ms ease;
 }
 .physical-book.wide {
   width: min(80vw, calc((100dvh - 235px) *1.414), 1000px);
+  transform: translateY(-14px) rotateX(1.2deg) scale(0.955);
   box-shadow:
     0 22px 34px #233d6030,
     0 45px 78px #1f36552b;
@@ -2788,7 +2789,7 @@ textarea {
   left: 8px;
   width: 24px;
 }
-.physical-book.binder.wide > .binder-binding {
+.physical-book.binder.spread > .binder-binding {
   left: 50%;
 }
 .reader-arrow {
@@ -2838,10 +2839,10 @@ textarea {
   transform-style: preserve-3d;
   pointer-events: none;
 }
-.wide > .curl-page {
+.physical-book.spread > .curl-page {
   width: 50%;
 }
-.wide > .curl-page.from-right {
+.physical-book.spread > .curl-page.from-right {
   left: 50%;
 }
 .curl-strip {
@@ -2940,10 +2941,10 @@ textarea {
   left: 8px;
   width: calc(100% - 16px);
 }
-.physical-book.binder.wide .curl-page {
+.physical-book.binder.spread .curl-page {
   width: calc(50% - 13px);
 }
-.physical-book.binder.wide .curl-page.from-right {
+.physical-book.binder.spread .curl-page.from-right {
   left: calc(50% + 4px);
 }
 @media (max-width: 700px) {
@@ -3002,7 +3003,7 @@ textarea {
     left: 6px;
     width: 24px;
   }
-  .physical-book.binder.wide > .binder-binding {
+  .physical-book.binder.spread > .binder-binding {
     left: 50%;
   }
   .physical-book.binder .curl-page {
@@ -3011,10 +3012,10 @@ textarea {
     left: 6px;
     width: calc(100% - 12px);
   }
-  .physical-book.binder.wide .curl-page {
+  .physical-book.binder.spread .curl-page {
     width: calc(50% - 9px);
   }
-  .physical-book.binder.wide .curl-page.from-right {
+  .physical-book.binder.spread .curl-page.from-right {
     left: calc(50% + 3px);
   }
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState, memo } from 'react';
+import { useEffect, useRef, useState, memo, type CSSProperties } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { type Folio, type Page, paper } from '@/lib/folio/model';
 import { PageCanvas } from './PageCanvas';
@@ -39,6 +39,7 @@ function CurledPage({
   width,
   wide,
   binder,
+  coverTransition,
 }: {
   front: Page;
   back: Page;
@@ -47,6 +48,7 @@ function CurledPage({
   width: number;
   wide: boolean;
   binder: boolean;
+  coverTransition?: { opening: boolean; openProgress: number };
 }) {
   const motion = turnMotion(progress, direction);
   const pieces = [];
@@ -111,7 +113,17 @@ function CurledPage({
   return (
     <div
       aria-hidden
-      className={`curl-page ${wide ? 'from-right' : ''} ${direction < 0 ? 'returning-page' : 'forward-page'}`}
+      className={`curl-page ${wide && direction > 0 ? 'from-right' : ''} ${direction < 0 ? 'returning-page' : 'forward-page'} ${coverTransition ? 'cover-turn' : ''}`}
+      style={
+        coverTransition
+          ? {
+              width: `${100 / (1 + coverTransition.openProgress)}%`,
+              left: coverTransition.opening
+                ? `${100 - 100 / (1 + coverTransition.openProgress)}%`
+                : '0%',
+            }
+          : undefined
+      }
     >
       {pieces}
     </div>
@@ -141,17 +153,28 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
     live = useRef<typeof turn>(undefined);
   const baseIndex = Math.min(index, folio.pages.length - 1),
     wide = baseIndex > 0,
+    coverTransition =
+      turn &&
+      ((turn.from === 0 && turn.to === 1) || (turn.from === 1 && turn.to === 0))
+        ? {
+            opening: turn.direction > 0,
+            openProgress:
+              turn.direction > 0 ? turn.progress : 1 - turn.progress,
+          }
+        : undefined,
+    renderWide = wide || !!coverTransition,
+    bookExpanded = coverTransition ? coverTransition.opening : wide,
     previousIndex = readerDestination(baseIndex, -1, folio.pages.length),
     nextIndex = readerDestination(baseIndex, 1, folio.pages.length);
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
     const observer = new ResizeObserver((entries) =>
-      setWidth(entries[0].contentRect.width / (wide ? 2 : 1)),
+      setWidth(entries[0].contentRect.width / (renderWide ? 2 : 1)),
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [wide]);
+  }, [renderWide]);
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
   function frame(value: typeof turn) {
     live.current = value;
@@ -206,10 +229,16 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
   });
   let left = folio.pages[baseIndex],
     right = folio.pages[baseIndex + 1] || blank;
-  if (turn) {
+  if (coverTransition) {
+    left = coverTransition.opening ? folio.pages[1] || blank : blank;
+    right = folio.pages[2] || blank;
+  } else if (turn) {
     if (!wide) left = folio.pages[turn.direction > 0 ? turn.to : turn.from];
     else if (turn.direction > 0) right = folio.pages[turn.to + 1] || blank;
-    else left = folio.pages[turn.to];
+    else {
+      left = folio.pages[turn.to];
+      right = folio.pages[turn.to + 1] || blank;
+    }
   }
   const front = turn
     ? folio.pages[
@@ -244,7 +273,15 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
         </button>
         <div
           ref={ref}
-          className={`physical-book ${wide ? 'wide' : ''} ${folio.bookType}`}
+          className={`physical-book ${renderWide ? 'spread' : ''} ${bookExpanded ? 'wide' : ''} ${coverTransition ? (coverTransition.opening ? 'opening-cover' : 'closing-cover') : ''} ${folio.bookType}`}
+          style={
+            coverTransition
+              ? ({
+                  '--book-open': coverTransition.openProgress,
+                  transform: `translateY(${-9 - coverTransition.openProgress * 5}px) rotateX(1.2deg) scale(${1 - coverTransition.openProgress * 0.045})`,
+                } as CSSProperties)
+              : undefined
+          }
           onPointerDown={(e) => {
             if (live.current || e.button !== 0) return;
             gesture.current = {
@@ -291,11 +328,11 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
         >
           <div className="read-leaf">
             <PageCanvas page={left} />
-            {folio.bookType === 'binder' && !wide && (
+            {folio.bookType === 'binder' && !renderWide && (
               <BinderHoles edge="left" />
             )}
           </div>
-          {wide && (
+          {renderWide && (
             <div className="read-leaf">
               {right.id === blank.id ? (
                 <div className="endpaper">
@@ -308,7 +345,9 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
               {folio.bookType === 'binder' && <BinderHoles edge="left" />}
             </div>
           )}
-          {folio.bookType === 'book' && wide && <div className="book-gutter" />}
+          {folio.bookType === 'book' && renderWide && (
+            <div className="book-gutter" />
+          )}
           {folio.bookType === 'binder' && (
             <div className="binder-binding">
               <i />
@@ -332,8 +371,9 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
                 progress={turn.progress}
                 direction={turn.direction}
                 width={width}
-                wide={wide}
+                wide={renderWide}
                 binder={folio.bookType === 'binder'}
+                coverTransition={coverTransition}
               />
             </>
           )}
