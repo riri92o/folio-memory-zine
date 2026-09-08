@@ -16,6 +16,9 @@ const blank: Page = {
   doodles: [],
   doodlesVisible: false,
 };
+const ReadingFace = memo(function ReadingFace({ page }: { page: Page }) {
+  return <PageCanvas page={page} />;
+});
 const TurningFace = memo(function TurningFace({ page }: { page: Page }) {
   return <PageCanvas page={page} thumb />;
 });
@@ -133,6 +136,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
     [bookWidth, setBookWidth] = useState(340);
   const ref = useRef<HTMLDivElement>(null),
     raf = useRef(0),
+    dragRaf = useRef(0),
     gesture = useRef<
       | {
           x: number;
@@ -163,7 +167,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
     pageWidth = bookWidth / 2,
     previousIndex = readerDestination(baseIndex, -1, folio.pages.length),
     nextIndex = readerDestination(baseIndex, 1, folio.pages.length);
-  const turnSettled = !!turn && turn.progress >= 0.92;
+  const turnSettled = !!turn && turn.progress >= 0.9999;
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
@@ -173,12 +177,20 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
-  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(raf.current);
+      cancelAnimationFrame(dragRaf.current);
+    },
+    [],
+  );
   function frame(value: typeof turn) {
     live.current = value;
     setTurn(value);
   }
-  function animate(target: number) {
+  function animate(target: number, fromButton = false) {
+    cancelAnimationFrame(dragRaf.current);
+    dragRaf.current = 0;
     const currentTurn = live.current;
     if (!currentTurn) return;
     const initial = currentTurn;
@@ -187,10 +199,10 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
       from = initial.progress,
       duration = matchMedia('(prefers-reduced-motion: reduce)').matches
         ? 1
-        : Math.max(180, 420 * Math.abs(target - from));
+        : Math.max(180, 440 * Math.abs(target - from));
     function tick(now: number) {
       const t = Math.min(1, (now - start) / duration),
-        eased = 1 - Math.pow(1 - t, 3);
+        eased = fromButton ? t * t * (3 - 2 * t) : 1 - Math.pow(1 - t, 3);
       frame({ ...initial, progress: from + (target - from) * eased });
       if (t < 1) raf.current = requestAnimationFrame(tick);
       else {
@@ -208,7 +220,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
   }
   function flip(direction: number) {
     if (live.current) return;
-    if (begin(direction)) animate(1);
+    if (begin(direction)) animate(1, true);
   }
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
@@ -289,7 +301,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
               direction: 0,
               progress: 0,
               active: false,
-              width: pageWidth,
+              width: pageWidth * bookScale,
             };
             e.currentTarget.setPointerCapture(e.pointerId);
           }}
@@ -312,7 +324,15 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
               Math.min(0.99, (-dx * g.direction) / (g.width * 0.9)),
             );
             g.progress = progress;
-            if (live.current) frame({ ...live.current, progress });
+            if (live.current) {
+              live.current = { ...live.current, progress };
+              if (!dragRaf.current) {
+                dragRaf.current = requestAnimationFrame(() => {
+                  dragRaf.current = 0;
+                  setTurn(live.current);
+                });
+              }
+            }
           }}
           onPointerUp={(e) => {
             const g = gesture.current;
@@ -340,7 +360,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
             {left.id === blank.id ? (
               <div className="cover-void-surface" />
             ) : (
-              <PageCanvas page={left} />
+              <ReadingFace page={left} />
             )}
             {folio.bookType === 'binder' && left.id !== blank.id && (
               <BinderHoles edge="right" />
@@ -355,7 +375,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
                 <p className="handwritten">Until the next moment.</p>
               </div>
             ) : (
-              <PageCanvas page={right} />
+              <ReadingFace page={right} />
             )}
             {folio.bookType === 'binder' && <BinderHoles edge="left" />}
           </div>
