@@ -30,7 +30,7 @@ function BinderHoles({ edge }: { edge: 'left' | 'right' }) {
   );
 }
 
-const strips = 12;
+const strips = 20;
 // Piecewise cylindrical bend. Adjacent segments share endpoints, so the page
 // remains a continuous surface through the turn; both faces stay visible.
 function CurledPage({
@@ -79,8 +79,7 @@ function CurledPage({
           <div
             className="curl-light"
             style={{
-              opacity:
-                Math.sin(progress * Math.PI) * (0.08 + (j / strips) * 0.25),
+              opacity: Math.sin(progress * Math.PI) * 0.045,
             }}
           />
         </div>
@@ -96,7 +95,7 @@ function CurledPage({
           </div>
           <div
             className="curl-light"
-            style={{ opacity: 0.06 + Math.sin(progress * Math.PI) * 0.15 }}
+            style={{ opacity: Math.sin(progress * Math.PI) * 0.045 }}
           />
         </div>
         {binder && j === 0 && (
@@ -329,7 +328,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
               <PageCanvas page={left} />
             )}
             {folio.bookType === 'binder' && left.id !== blank.id && (
-              <BinderHoles edge="left" />
+              <BinderHoles edge="right" />
             )}
           </div>
           <div className="read-leaf">
@@ -347,12 +346,20 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
             <div className="book-gutter" style={{ opacity: openness }} />
           )}
           {folio.bookType === 'binder' && (
-            <div className="binder-binding">
-              <i />
-              <i />
-              <i />
-              <i />
-            </div>
+            <>
+              <div className="binder-binding binder-binding-back" aria-hidden>
+                <i />
+                <i />
+                <i />
+                <i />
+              </div>
+              <div className="binder-binding binder-binding-front" aria-hidden>
+                <i />
+                <i />
+                <i />
+                <i />
+              </div>
+            </>
           )}
           {turn && (
             <>
