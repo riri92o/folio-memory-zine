@@ -11,7 +11,7 @@
     "start": "vite preview --outDir dist/client",
     "lint": "oxlint",
     "format": "oxfmt",
-    "test": "node scripts/test.mjs",
+    "test": "node scripts/test.mjs && node scripts/book-test.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -22,6 +22,7 @@
     "cmdk": "1.1.1",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.2",
+    "html-to-image": "^1.11.13",
     "input-otp": "1.4.2",
     "lucide-react": "1.31.0",
     "react": "19.2.6",
