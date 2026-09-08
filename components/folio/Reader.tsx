@@ -98,13 +98,16 @@ function CurledPage({
             style={{ opacity: Math.sin(progress * Math.PI) * 0.045 }}
           />
         </div>
-        {binder && j === 0 && (
-          <div className="turn-punches">
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
+        {binder && j === 0 && progress < 0.76 && (
+          <>
+            <div className="turn-binding-strip" />
+            <div className="turn-punches">
+              <i />
+              <i />
+              <i />
+              <i />
+            </div>
+          </>
         )}
       </div>,
     );
@@ -160,6 +163,7 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
     pageWidth = bookWidth / 2,
     previousIndex = readerDestination(baseIndex, -1, folio.pages.length),
     nextIndex = readerDestination(baseIndex, 1, folio.pages.length);
+  const turnSettled = !!turn && turn.progress >= 0.92;
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
@@ -224,7 +228,10 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
   let left = baseIndex === 0 ? blank : folio.pages[baseIndex],
     right =
       baseIndex === 0 ? folio.pages[0] : folio.pages[baseIndex + 1] || blank;
-  if (coverTransition) {
+  if (turnSettled && turn) {
+    left = turn.to === 0 ? blank : folio.pages[turn.to];
+    right = turn.to === 0 ? folio.pages[0] : folio.pages[turn.to + 1] || blank;
+  } else if (coverTransition) {
     left = blank;
     right = folio.pages[2] || blank;
   } else if (turn) {
@@ -319,8 +326,16 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
             if (live.current) animate(0);
           }}
         >
+          {folio.bookType === 'binder' && (
+            <div className="binder-binding binder-binding-back" aria-hidden>
+              <i />
+              <i />
+              <i />
+              <i />
+            </div>
+          )}
           <div
-            className={`read-leaf ${left.id === blank.id ? 'cover-void' : ''}`}
+            className={`read-leaf ${left.id === blank.id ? 'cover-void' : ''} ${folio.bookType === 'binder' && left.id !== blank.id ? 'binder-sheet binding-right' : ''}`}
           >
             {left.id === blank.id ? (
               <div className="cover-void-surface" />
@@ -331,7 +346,9 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
               <BinderHoles edge="right" />
             )}
           </div>
-          <div className="read-leaf">
+          <div
+            className={`read-leaf ${folio.bookType === 'binder' ? 'binder-sheet binding-left' : ''}`}
+          >
             {right.id === blank.id ? (
               <div className="endpaper">
                 <span className="wordmark">Folio</span>
@@ -346,22 +363,14 @@ export function Reader({ folio }: { folio: Folio; onEdit: () => void }) {
             <div className="book-gutter" style={{ opacity: openness }} />
           )}
           {folio.bookType === 'binder' && (
-            <>
-              <div className="binder-binding binder-binding-back" aria-hidden>
-                <i />
-                <i />
-                <i />
-                <i />
-              </div>
-              <div className="binder-binding binder-binding-front" aria-hidden>
-                <i />
-                <i />
-                <i />
-                <i />
-              </div>
-            </>
+            <div className="binder-binding binder-binding-front" aria-hidden>
+              <i />
+              <i />
+              <i />
+              <i />
+            </div>
           )}
-          {turn && (
+          {turn && !turnSettled && (
             <>
               {coverTransition && (
                 <div
