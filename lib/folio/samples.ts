@@ -70,7 +70,7 @@ export function samples(): Folio[] {
       for (const ref of refs)
         p.elements.push({
           ...newElement('photo'),
-          imageRef: '/samples/' + ref + '.jpg',
+          imageRef: `${import.meta.env.BASE_URL}samples/${ref}.jpg`,
           aspect: ref === 'cafe' ? 2 / 3 : 1.5,
         });
       const next = generateLayout(p, s.theme, 1788739200000 + i * 29 + j * 18, {

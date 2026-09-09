@@ -14,6 +14,8 @@ pnpm dev
 
 表示されたローカルURLを開いてください。公開用ファイルは `pnpm build` で `dist/client/` に生成されます。このフォルダを静的サーバーで配信できます。HTTPSまたはlocalhostが必要です。
 
+`main` ブランチをGitHubへ送ると、同梱のGitHub ActionsがGitHub Pagesへ公開します。リポジトリのPages設定でSourceを「GitHub Actions」にしてください。公開されるのはアプリ本体とサンプルだけで、IndexedDBに保存した利用者の写真や冊子はリポジトリにもビルドにも含まれません。
+
 ## できること
 
 - 冊子の作成・閲覧・編集・削除。表紙を含め最大15ページ。

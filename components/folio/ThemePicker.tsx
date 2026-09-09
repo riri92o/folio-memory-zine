@@ -14,7 +14,7 @@ const demoPhotos: Element[] = ['city', 'coast', 'cafe'].map((name, i) => ({
   id: 'preview-' + i,
   type: 'photo',
   content: '',
-  imageRef: '/samples/' + name + '.jpg',
+  imageRef: `${import.meta.env.BASE_URL}samples/${name}.jpg`,
   aspect: i === 2 ? 2 / 3 : 1.5,
   x: 0,
   y: 0,

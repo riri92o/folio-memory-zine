@@ -51,7 +51,9 @@ export default function Home() {
     latest = useRef<Folio | undefined>(undefined);
   useEffect(() => {
     if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator)
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker
+        .register(`${import.meta.env.BASE_URL}sw.js`)
+        .catch(() => {});
     loadFolios()
       .then(setBooks)
       .catch(() =>

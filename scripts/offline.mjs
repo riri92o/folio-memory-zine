@@ -2,6 +2,8 @@ import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 const root = 'dist/client';
+const configuredBase = process.env.VITE_BASE_PATH || '/';
+const base = `/${configuredBase.replace(/^\/+|\/+$/g, '')}${configuredBase === '/' ? '' : '/'}`;
 async function list(dir) {
   const result = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -18,15 +20,16 @@ const hash = createHash('sha256');
 for (const file of files) hash.update(await readFile(file));
 const version = 'folio-assets-' + hash.digest('hex').slice(0, 12);
 const paths = files.map(
-  (f) => '/' + path.relative(root, f).replaceAll('\\', '/'),
+  (f) => base + path.relative(root, f).replaceAll('\\', '/'),
 );
+const index = `${base}index.html`;
 await writeFile(
   path.join(root, 'sw.js'),
   `const CACHE=${JSON.stringify(version)};
-const FILES=${JSON.stringify(['/', ...paths])};
+const FILES=${JSON.stringify([base, ...paths])};
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('folio-assets-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
-self.addEventListener('fetch',event=>{const request=event.request,url=new URL(request.url);if(request.method!=='GET'||url.origin!==self.location.origin)return;if(request.mode==='navigate'){event.respondWith(fetch(request).catch(()=>caches.match('/index.html')));return;}if(!FILES.includes(url.pathname))return;event.respondWith(caches.match(url.pathname).then(hit=>hit||fetch(request)));});
+self.addEventListener('fetch',event=>{const request=event.request,url=new URL(request.url);if(request.method!=='GET'||url.origin!==self.location.origin)return;if(request.mode==='navigate'){event.respondWith(fetch(request).catch(()=>caches.match(${JSON.stringify(index)})));return;}if(!FILES.includes(url.pathname))return;event.respondWith(caches.match(url.pathname).then(hit=>hit||fetch(request)));});
 `,
 );
 console.log(`Offline cache prepared: ${paths.length} bundled files.`);

@@ -120,7 +120,7 @@ export async function deleteFolio(folio: Folio) {
 }
 
 export async function imageUrl(id: string, thumbnail = false) {
-  if (id.startsWith('/samples/')) return id;
+  if (/\/samples\//.test(id)) return id;
   const key = id + (thumbnail ? ':thumb' : '');
   if (urls.has(key)) return urls.get(key)!;
   const database = await db();
