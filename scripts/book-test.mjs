@@ -95,6 +95,25 @@ book.setContent({
 assert.equal(book.currentSpread, -1);
 assert.equal(book.textures[-1], texture);
 assert.equal(book.textures.length, 4);
+const topLeft = book.project(0, -0.7, 0.014);
+const bottomLeft = book.project(0, 0.7, 0.014);
+const topRight = book.project(1, -0.7, 0.014);
+const bottomRight = book.project(1, 0.7, 0.014);
+assert.equal(
+  topLeft.x,
+  bottomLeft.x,
+  'flat cover keeps its left edge vertical',
+);
+assert.equal(
+  topRight.x,
+  bottomRight.x,
+  'flat cover keeps its right edge vertical',
+);
+assert.equal(
+  topRight.x - topLeft.x,
+  bottomRight.x - bottomLeft.x,
+  'flat cover is rectangular rather than trapezoidal',
+);
 const draws = [];
 book.paper = (...args) => draws.push(args);
 book.render();
