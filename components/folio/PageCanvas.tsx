@@ -16,6 +16,13 @@ import {
   uid,
 } from '@/lib/folio/model';
 import { imageUrl } from '@/lib/folio/storage';
+import {
+  angle,
+  angleDelta,
+  resizeFromCorner,
+  transformFromPinch,
+  type Point,
+} from '@/lib/folio/gesture';
 export function LocalImage({
   src,
   thumb = false,
@@ -111,14 +118,25 @@ export function PageCanvas({
   thumb?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null),
+    pointers = useRef(new Map<number, Point>()),
     gesture = useRef<
       | {
           kind: string;
+          pointerId: number;
           start: [number, number];
           el?: Element;
           rect: DOMRect;
           stroke?: Stroke;
           next?: Element;
+          pinch?: {
+            ids: [number, number];
+            starts: [Point, Point];
+            element: Element;
+          };
+          rotate?: {
+            pointerAngle: number;
+            elementRotation: number;
+          };
         }
       | undefined
     >(undefined);
@@ -140,6 +158,7 @@ export function PageCanvas({
     e.stopPropagation();
     const rect = ref.current!.getBoundingClientRect();
     if (draw) {
+      if (gesture.current) return;
       const st: Stroke = {
         id: uid(),
         ...draw,
@@ -152,23 +171,89 @@ export function PageCanvas({
       };
       gesture.current = {
         kind: 'draw',
+        pointerId: e.pointerId,
         start: [e.clientX, e.clientY],
         rect,
         stroke: st,
       };
       setStroke(st);
     } else {
-      onSelect?.(el?.id);
-      if (!el || el.locked) return;
-      gesture.current = { kind, start: [e.clientX, e.clientY], rect, el };
-      setDraft(el);
+      const active = gesture.current;
+      const target = el || active?.el;
+      if (!active) onSelect?.(target?.id);
+      if (!target || target.locked) return;
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (
+        kind === 'move' &&
+        active?.kind === 'move' &&
+        active.el?.id === target.id &&
+        pointers.current.size === 2
+      ) {
+        const ids = [...pointers.current.keys()] as [number, number];
+        active.pinch = {
+          ids,
+          starts: ids.map((id) => pointers.current.get(id)!) as [Point, Point],
+          element: active.next || active.el,
+        };
+      } else if (!active) {
+        const center = {
+          x: rect.left + ((target.x + target.width / 2) / 100) * rect.width,
+          y: rect.top + ((target.y + target.height / 2) / 100) * rect.height,
+        };
+        gesture.current = {
+          kind,
+          pointerId: e.pointerId,
+          start: [e.clientX, e.clientY],
+          rect,
+          el: target,
+          rotate:
+            kind === 'rotate'
+              ? {
+                  pointerAngle: angle(center, {
+                    x: e.clientX,
+                    y: e.clientY,
+                  }),
+                  elementRotation: target.rotation,
+                }
+              : undefined,
+        };
+      }
+      setDraft(target);
     }
-    ref.current!.setPointerCapture(e.pointerId);
+    try {
+      ref.current!.setPointerCapture(e.pointerId);
+    } catch {
+      // Some WebKit versions can end a touch between pointerdown and capture.
+      // The gesture still works through the page-level pointer handlers.
+    }
     e.preventDefault();
   }
   function move(e: PointerEvent) {
     const g = gesture.current;
     if (!g) return;
+    if (!g.stroke)
+      pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (g.pinch) {
+      const [a, b] = g.pinch.ids.map((id) => pointers.current.get(id));
+      if (!a || !b) return;
+      const next = {
+        ...g.pinch.element,
+        ...transformFromPinch(
+          g.pinch.element,
+          g.pinch.starts[0],
+          g.pinch.starts[1],
+          a,
+          b,
+          g.rect.width,
+          g.rect.height,
+        ),
+        style: { ...g.pinch.element.style, auto: false },
+      };
+      g.next = next;
+      setDraft(next);
+      return;
+    }
+    if (e.pointerId !== g.pointerId) return;
     const dx = ((e.clientX - g.start[0]) / g.rect.width) * 100,
       dy = ((e.clientY - g.start[1]) / g.rect.height) * 100;
     if (g.stroke) {
@@ -200,20 +285,31 @@ export function PageCanvas({
       next.x = Math.max(0, Math.min(100 - el.width, el.x + dx));
       next.y = Math.max(0, Math.min(100 - el.height, el.y + dy));
     } else if (g.kind === 'resize') {
-      const scale = Math.max(0.25, Math.min(3, 1 + dx / el.width));
-      next.width = Math.min(100 - el.x, Math.max(6, el.width * scale));
-      next.height = Math.min(
-        100 - el.y,
-        Math.max(4, el.height * (next.width / el.width)),
+      Object.assign(next, resizeFromCorner(el, dx, dy));
+    } else if (g.rotate) {
+      const center = {
+        x: g.rect.left + ((el.x + el.width / 2) / 100) * g.rect.width,
+        y: g.rect.top + ((el.y + el.height / 2) / 100) * g.rect.height,
+      };
+      next.rotation = Math.round(
+        g.rotate.elementRotation +
+          angleDelta(
+            g.rotate.pointerAngle,
+            angle(center, { x: e.clientX, y: e.clientY }),
+          ),
       );
-    } else next.rotation = Math.round(el.rotation + dx * 3);
+    }
     g.next = next;
     setDraft(next);
   }
   function end(e: PointerEvent) {
     const g = gesture.current;
     if (!g) return;
+    pointers.current.delete(e.pointerId);
+    if (g.pinch && pointers.current.size > 0) return;
+    if (!g.pinch && e.pointerId !== g.pointerId) return;
     gesture.current = undefined;
+    pointers.current.clear();
     if (g.stroke)
       onChange?.({
         ...page,
@@ -245,11 +341,8 @@ export function PageCanvas({
       onPointerDown={(e) => start(e)}
       onPointerMove={move}
       onPointerUp={end}
-      onPointerCancel={() => {
-        gesture.current = undefined;
-        setDraft(undefined);
-        setStroke(undefined);
-      }}
+      onPointerCancel={end}
+      onLostPointerCapture={end}
     >
       <div className="paper-texture" style={{ opacity: p.texture }} />
       {[...page.elements]

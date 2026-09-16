@@ -156,7 +156,15 @@
 .paper-texture {
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.5' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image:
+    radial-gradient(circle at 22% 31%, #24364a 0 0.35px, transparent 0.7px),
+    radial-gradient(circle at 71% 64%, #24364a 0 0.3px, transparent 0.65px),
+    linear-gradient(125deg, #fff4, transparent 42%, #24364a08);
+  background-size:
+    11px 13px,
+    17px 19px,
+    100% 100%;
+  mix-blend-mode: multiply;
   pointer-events: none;
   z-index: 0;
 }

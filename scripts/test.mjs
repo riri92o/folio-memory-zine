@@ -7,7 +7,7 @@ import ts from 'typescript';
 import 'fake-indexeddb/auto';
 const directory = await mkdtemp(path.join(tmpdir(), 'folio-tests-'));
 try {
-  for (const name of ['model', 'layout', 'storage', 'turn']) {
+  for (const name of ['model', 'layout', 'storage', 'turn', 'gesture']) {
     const input = await readFile(
       new URL(`../lib/folio/${name}.ts`, import.meta.url),
       'utf8',
@@ -81,6 +81,42 @@ try {
       }
   const { turnGeometry, turnMotion, readerDestination } = await import(
     pathToFileURL(path.join(directory, 'turn.mjs'))
+  );
+  const { angleDelta, resizeFromCorner, transformFromPinch } = await import(
+    pathToFileURL(path.join(directory, 'gesture.mjs'))
+  );
+  const geometry = { x: 20, y: 20, width: 30, height: 20, rotation: 10 };
+  assert.deepEqual(
+    resizeFromCorner(geometry, 15, 10),
+    { x: 20, y: 20, width: 45, height: 30, rotation: 10 },
+    'corner drag preserves the element ratio',
+  );
+  const pinched = transformFromPinch(
+    geometry,
+    { x: 100, y: 100 },
+    { x: 200, y: 100 },
+    { x: 100, y: 100 },
+    { x: 300, y: 100 },
+    500,
+    707,
+  );
+  assert.equal(pinched.width, 60, 'pinch changes element size');
+  assert.equal(pinched.height, 40, 'pinch keeps the element ratio');
+  assert.equal(pinched.rotation, 10, 'horizontal pinch keeps rotation');
+  const rotated = transformFromPinch(
+    geometry,
+    { x: 100, y: 100 },
+    { x: 200, y: 100 },
+    { x: 100, y: 100 },
+    { x: 100, y: 200 },
+    500,
+    707,
+  );
+  assert.equal(rotated.rotation, 100, 'two fingers rotate the element');
+  assert.equal(
+    angleDelta(179, -179),
+    2,
+    'rotation crosses 180 degrees smoothly',
   );
   for (const direction of [-1, 1])
     for (let i = 0; i <= 20; i++) {
